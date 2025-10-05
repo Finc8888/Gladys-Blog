@@ -1,0 +1,102 @@
+# Simplified Dockerfile for reliable Hugo blog builds
+FROM alpine:latest as hugo-builder
+
+# Install Hugo and basic tools
+WORKDIR /src
+RUN apk add --no-cache \
+    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+    hugo \
+    git \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Copy blog source files
+COPY blog/ ./
+
+# Verify Hugo installation and site structure
+RUN hugo version
+RUN ls -la
+RUN ls -la themes/ || echo "No themes directory"
+
+# Create basic fallback layout if theme is missing
+RUN mkdir -p layouts/_default && \
+    echo '<!DOCTYPE html><html><head><title>{{ .Title }}</title></head><body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>' > layouts/_default/single.html && \
+    echo '<!DOCTYPE html><html><head><title>{{ .Site.Title }}</title></head><body>{{ range .Pages }}<h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>{{ end }}</body></html>' > layouts/_default/list.html
+
+# Build static site with basic options (no git info, no advanced features)
+RUN hugo \
+    --minify \
+    --destination /dist \
+    --baseURL "/" \
+    --cleanDestinationDir \
+    --ignoreCache \
+    --quiet || \
+    hugo \
+    --destination /dist \
+    --baseURL "/" \
+    --cleanDestinationDir
+
+# Verify build output
+RUN ls -la /dist && \
+    test -f /dist/index.html || (echo "ERROR: No index.html generated!" && ls -la /dist && exit 1)
+
+# Production image with Nginx
+FROM nginx:alpine
+
+# Metadata
+LABEL maintainer="gladys-blog" \
+      version="1.0-simple" \
+      description="Simple Hugo blog with Nginx"
+
+# Install basic tools
+RUN apk add --no-cache \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Create user for nginx
+RUN addgroup -g 1001 -S nginx-app && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-app -g nginx-app nginx-app
+
+# Copy built site
+COPY --from=hugo-builder /dist /usr/share/nginx/html
+
+# Copy basic nginx configuration
+COPY deploy/nginx.conf /etc/nginx/nginx.conf
+
+# Create necessary directories and set permissions
+RUN mkdir -p /var/cache/nginx/client_temp \
+             /var/cache/nginx/proxy_temp \
+             /var/cache/nginx/fastcgi_temp \
+             /var/cache/nginx/uwsgi_temp \
+             /var/cache/nginx/scgi_temp \
+             /var/log/nginx && \
+    chown -R nginx-app:nginx-app /var/cache/nginx \
+                                 /var/log/nginx \
+                                 /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Create simple entrypoint
+RUN echo '#!/bin/bash' > /docker-entrypoint.sh && \
+    echo 'echo "Starting Gladys Blog (Simple Mode)"' >> /docker-entrypoint.sh && \
+    echo 'echo "Site files:"' >> /docker-entrypoint.sh && \
+    echo 'ls -la /usr/share/nginx/html/' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Expose port
+EXPOSE 80
+
+# Environment variables
+ENV NGINX_WORKER_PROCESSES=auto \
+    NGINX_WORKER_CONNECTIONS=1024
+
+# Use unprivileged user
+USER nginx-app
+
+# Start nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]

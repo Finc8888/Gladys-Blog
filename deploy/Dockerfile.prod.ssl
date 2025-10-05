@@ -12,6 +12,13 @@ RUN apk add --no-cache \
 # Copy blog source files
 COPY blog/ ./
 
+# Initialize git repository for Hugo (required for some features)
+RUN git init && \
+    git config user.email "docker@gladys-blog.com" && \
+    git config user.name "Docker Build" && \
+    git add . && \
+    git commit -m "Initial commit for Docker build" || true
+
 # Validate Hugo configuration
 RUN hugo version && \
     hugo config && \
@@ -20,11 +27,11 @@ RUN hugo version && \
 # Build static site with optimizations
 RUN hugo \
     --minify \
-    --enableGitInfo \
     --destination /dist \
     --baseURL "/" \
     --cleanDestinationDir \
-    --gc
+    --gc \
+    --ignoreCache
 
 # Verify that the site was built successfully
 RUN ls -la /dist && \

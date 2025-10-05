@@ -272,16 +272,37 @@ deploy() {
 
     # Build and start services
     log "Building and starting SSL-enabled services..."
-
+    
     if [ "$MODE" = "development" ]; then
         docker-compose -f "$COMPOSE_FILE" up --build blog-dev
     else
-        docker-compose -f "$COMPOSE_FILE" up --build -d blog-prod-ssl
-
+        # Try building with SSL Dockerfile, fallback to simple version if it fails
+        log "Attempting to build with SSL-enabled Dockerfile..."
+        if ! docker-compose -f "$COMPOSE_FILE" up --build -d blog-prod-ssl; then
+            warn "SSL Dockerfile build failed, trying with simplified version..."
+            
+            # Update compose file to use simple Dockerfile
+            local temp_compose="/tmp/docker-compose.ssl.simple.yaml"
+            sed 's/dockerfile: deploy\/Dockerfile\.prod\.ssl/dockerfile: deploy\/Dockerfile.prod.simple/' "$COMPOSE_FILE" > "$temp_compose"
+            
+            log "Building with simplified Dockerfile..."
+            if docker-compose -f "$temp_compose" up --build -d blog-prod-ssl; then
+                success "Successfully built with simplified Dockerfile"
+            else
+                error "Both SSL and simplified builds failed"
+                return 1
+            fi
+            
+            # Clean up temp file
+            rm -f "$temp_compose"
+        else
+            success "SSL build completed successfully"
+        fi
+        
         # Wait for service to be ready
         log "Waiting for service to be ready..."
         sleep 10
-
+        
         # Check health
         check_health
     fi
@@ -315,7 +336,11 @@ start_production() {
         docker-compose -f "$COMPOSE_FILE" up -d certbot-renew
     else
         # Modern version with profiles
-        docker-compose -f "$COMPOSE_FILE" --profile auto-renew up --build -d
+        if ! docker-compose -f "$COMPOSE_FILE" --profile auto-renew up --build -d; then
+            warn "Profile-based deployment failed, trying individual services..."
+            docker-compose -f "$COMPOSE_FILE" up --build -d blog-prod-ssl
+            docker-compose -f "$COMPOSE_FILE" up -d certbot-renew
+        fi
     fi
 
     success "Production services started with SSL and auto-renewal"
