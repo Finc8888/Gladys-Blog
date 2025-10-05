@@ -37,7 +37,7 @@ NGINX_PID="/var/run/nginx.pid"
 
 # Banner
 echo "========================================"
-echo "🚀 Gladys Blog Container Starting"
+echo "🚀 GladysAI-BlogGladysAI-Blog Container Starting"
 echo "========================================"
 
 log "Initializing Gladys Blog container..."
@@ -138,7 +138,7 @@ trap 'log "Received SIGINT, shutting down gracefully..."; nginx -s quit; exit 0'
 health_check() {
     local max_attempts=10
     local attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
         if curl -f http://localhost/health >/dev/null 2>&1; then
             return 0

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Local deployment script for Gladys Blog
+# Local deployment script for GladysAI-Blog
 # Usage: ./local-deploy.sh [options]
 
 set -e

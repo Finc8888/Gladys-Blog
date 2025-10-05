@@ -1,4 +1,4 @@
-# 🔐 Security Guidelines for Gladys Blog
+# 🔐 Security Guidelines for GladysAI-Blog
 
 This document outlines security best practices for developing, deploying, and maintaining the Gladys Blog project.
 
@@ -74,10 +74,10 @@ cp .env.ssl.example .env
    ```bash
    # Development
    .env.development
-   
+
    # Staging
    .env.staging
-   
+
    # Production
    .env.production
    ```
@@ -86,7 +86,7 @@ cp .env.ssl.example .env
    ```bash
    # SSL certificates (automated via Let's Encrypt)
    ./deploy/ssl-deploy.sh cert-renew
-   
+
    # SSH keys (annually)
    ssh-keygen -t ed25519 -C "deploy-$(date +%Y)"
    ```
@@ -202,19 +202,19 @@ services:
     # Security options
     security_opt:
       - no-new-privileges:true
-    
+
     # Read-only root filesystem
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
-    
+
     # Resource limits
     deploy:
       resources:
         limits:
           memory: 512M
           cpus: '1.0'
-    
+
     # Health checks
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -269,7 +269,7 @@ add_header X-Content-Type-Options "nosniff" always;
    ```bash
    # Check certificate expiry
    ./deploy/ssl-deploy.sh cert-info
-   
+
    # Automated monitoring
    echo "0 0 * * * /path/to/cert-check.sh" | crontab -
    ```
@@ -278,7 +278,7 @@ add_header X-Content-Type-Options "nosniff" always;
    ```bash
    # Regular backups
    ./deploy/ssl-deploy.sh backup
-   
+
    # Store securely offsite
    rsync -av ssl-backup-*/ user@backup-server:/secure/backups/
    ```
@@ -291,7 +291,7 @@ add_header X-Content-Type-Options "nosniff" always;
    ```bash
    # Keep system updated
    sudo apt update && sudo apt upgrade -y
-   
+
    # Enable automatic security updates
    sudo apt install unattended-upgrades
    sudo dpkg-reconfigure unattended-upgrades
@@ -326,7 +326,7 @@ add_header X-Content-Type-Options "nosniff" always;
    # Create deploy user
    sudo useradd -m -s /bin/bash deploy
    sudo usermod -aG docker deploy
-   
+
    # Limited sudo access
    echo "deploy ALL=(ALL) NOPASSWD: /usr/bin/docker, /usr/bin/docker-compose" | sudo tee /etc/sudoers.d/deploy
    ```
@@ -343,7 +343,7 @@ add_header X-Content-Type-Options "nosniff" always;
    ```bash
    # Use internal networks
    docker network create --internal backend-network
-   
+
    # Limit exposed ports
    docker run -p 127.0.0.1:8080:80 gladys-blog
    ```
@@ -355,15 +355,15 @@ add_header X-Content-Type-Options "nosniff" always;
    // Jenkinsfile security
    pipeline {
        agent any
-       
+
        options {
            // Prevent concurrent builds
            disableConcurrentBuilds()
-           
+
            // Timeout builds
            timeout(time: 30, unit: 'MINUTES')
        }
-       
+
        environment {
            // Use Jenkins credentials
            DEPLOY_KEY = credentials('deploy-ssh-key')
@@ -389,7 +389,7 @@ add_header X-Content-Type-Options "nosniff" always;
    ```bash
    # Monitor access logs
    tail -f /var/log/nginx/access.log | grep -E "(40[1-4]|50[0-5])"
-   
+
    # Monitor for suspicious activity
    grep -i "attack\|hack\|exploit" /var/log/nginx/access.log
    ```
@@ -399,13 +399,13 @@ add_header X-Content-Type-Options "nosniff" always;
    # Create monitoring script
    #!/bin/bash
    # /home/deploy/security-monitor.sh
-   
+
    # Check for failed login attempts
    failed_logins=$(grep "Failed password" /var/log/auth.log | wc -l)
    if [ $failed_logins -gt 10 ]; then
        curl -X POST "$WEBHOOK_URL" -d "🚨 High number of failed login attempts: $failed_logins"
    fi
-   
+
    # Check SSL certificate expiry
    if ! openssl x509 -checkend 604800 -noout -in /etc/ssl/cert.pem; then
        curl -X POST "$WEBHOOK_URL" -d "⚠️ SSL certificate expires within 7 days"
@@ -430,16 +430,16 @@ add_header X-Content-Type-Options "nosniff" always;
 1. **Emergency procedures**:
    ```bash
    # Immediate response to security incident
-   
+
    # 1. Isolate the system
    sudo ufw deny in
-   
+
    # 2. Stop all services
    docker stop $(docker ps -q)
-   
+
    # 3. Preserve evidence
    cp -r /var/log/ /tmp/incident-$(date +%Y%m%d-%H%M%S)/
-   
+
    # 4. Notify team
    curl -X POST "$ALERT_WEBHOOK" -d "🚨 SECURITY INCIDENT - System isolated"
    ```

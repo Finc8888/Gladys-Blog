@@ -1,6 +1,6 @@
 # 🚀 Production Deployment Guide
 
-Quick and secure deployment guide for Gladys Blog with SSL/HTTPS support.
+Quick and secure deployment guide for GladysAI-Blog with SSL/HTTPS support.
 
 ## 📋 Prerequisites
 

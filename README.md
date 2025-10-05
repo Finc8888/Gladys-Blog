@@ -1,4 +1,4 @@
-# 📝 Gladys Blog
+# 📝 GladysAI-Blog
 
 A modern, secure, and production-ready Hugo static site blog with automated deployment and SSL/HTTPS support.
 
@@ -9,7 +9,7 @@ A modern, secure, and production-ready Hugo static site blog with automated depl
 
 ## 🎯 Overview
 
-Gladys Blog is a complete blogging solution built with Hugo static site generator, featuring Docker containerization, automated SSL certificate management, and CI/CD deployment pipelines. Perfect for developers who want a fast, secure, and easily maintainable blog.
+GladysAI-Blog is a complete blogging solution built with Hugo static site generator, featuring Docker containerization, automated SSL certificate management, and CI/CD deployment pipelines. Perfect for developers who want a fast, secure, and easily maintainable blog.
 
 ## ✨ Features
 

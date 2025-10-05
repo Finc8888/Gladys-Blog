@@ -1,6 +1,6 @@
-# SSL/HTTPS Setup for Gladys Blog
+# SSL/HTTPS Setup for GladysAI-Blog
 
-This guide explains how to deploy Gladys Blog with SSL/HTTPS support using Let's Encrypt certificates and Docker.
+This guide explains how to deploy GladysAI-Blog with SSL/HTTPS support using Let's Encrypt certificates and Docker.
 
 ## 📋 Table of Contents
 
@@ -17,7 +17,7 @@ This guide explains how to deploy Gladys Blog with SSL/HTTPS support using Let's
 
 ## 🔍 Overview
 
-The SSL-enabled version of Gladys Blog provides:
+The SSL-enabled version of GladysAI-Blog provides:
 
 - **HTTPS encryption** for secure communication
 - **Automatic HTTP to HTTPS redirection**

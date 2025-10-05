@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Gladys Blog SSL Deployment Script
-# This script helps deploy the Gladys Blog with SSL/HTTPS support
+# GladysAI-Blog SSL Deployment Script
+# This script helps deploy the GladysAI-BlogGladysAI-Blog with SSL/HTTPS support
 
 set -e
 
@@ -97,31 +97,31 @@ show_usage() {
 # Function to check prerequisites
 check_prerequisites() {
     log "Checking prerequisites..."
-    
+
     # Check if docker is installed
     if ! command -v docker &> /dev/null; then
         error "Docker is not installed. Please install Docker first."
         exit 1
     fi
-    
+
     # Check if docker-compose is installed
     if ! command -v docker-compose &> /dev/null; then
         error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
-    
+
     # Check if we're in the right directory
     if [ ! -f "$COMPOSE_FILE" ]; then
         error "docker-compose.ssl.yaml not found. Please run this script from the project root."
         exit 1
     fi
-    
+
     # Check if Hugo blog directory exists
     if [ ! -d "$PROJECT_ROOT/blog" ]; then
         error "Blog directory not found. Please ensure the Hugo blog is in the 'blog' directory."
         exit 1
     fi
-    
+
     success "All prerequisites met"
 }
 
@@ -130,17 +130,17 @@ create_env_file() {
     local domain="${1:-$DEFAULT_DOMAIN}"
     local email="${2:-$DEFAULT_EMAIL}"
     local staging="${3:-$DEFAULT_STAGING}"
-    
+
     log "Creating environment configuration..."
-    
+
     if [ ! -f "$ENV_FILE" ] || [ "$FORCE_CONFIG" = "1" ]; then
         cp "$ENV_EXAMPLE" "$ENV_FILE"
-        
+
         # Update values in .env file
         sed -i "s/DOMAIN=localhost/DOMAIN=$domain/" "$ENV_FILE"
         sed -i "s/EMAIL=admin@localhost/EMAIL=$email/" "$ENV_FILE"
         sed -i "s/STAGING=0/STAGING=$staging/" "$ENV_FILE"
-        
+
         success "Environment file created: $ENV_FILE"
     else
         info "Environment file already exists: $ENV_FILE"
@@ -151,17 +151,17 @@ create_env_file() {
 interactive_setup() {
     highlight "=== Gladys Blog SSL Setup ==="
     echo ""
-    
+
     # Domain configuration
     echo -e "${CYAN}Domain Configuration:${NC}"
     read -p "Enter your domain name (default: localhost): " input_domain
     DOMAIN="${input_domain:-$DEFAULT_DOMAIN}"
-    
+
     # Email configuration
     echo -e "${CYAN}Email Configuration:${NC}"
     read -p "Enter your email for Let's Encrypt (default: admin@localhost): " input_email
     EMAIL="${input_email:-$DEFAULT_EMAIL}"
-    
+
     # Staging configuration
     echo -e "${CYAN}Certificate Configuration:${NC}"
     echo "Use Let's Encrypt staging environment for testing?"
@@ -172,7 +172,7 @@ interactive_setup() {
     else
         STAGING=0
     fi
-    
+
     # Mode selection
     echo -e "${CYAN}Deployment Mode:${NC}"
     echo "1) Development (HTTP only, hot reload)"
@@ -183,7 +183,7 @@ interactive_setup() {
     else
         MODE="production"
     fi
-    
+
     # Summary
     echo ""
     highlight "=== Configuration Summary ==="
@@ -192,16 +192,16 @@ interactive_setup() {
     echo "Staging: $([ "$STAGING" = "1" ] && echo "Yes" || echo "No")"
     echo "Mode: $MODE"
     echo ""
-    
+
     read -p "Proceed with this configuration? (Y/n): " confirm
     if [[ $confirm =~ ^[Nn]$ ]]; then
         warn "Setup cancelled by user"
         exit 0
     fi
-    
+
     # Create configuration
     create_env_file "$DOMAIN" "$EMAIL" "$STAGING"
-    
+
     success "Setup completed successfully!"
     echo ""
     info "Next steps:"
@@ -212,9 +212,9 @@ interactive_setup() {
 # Function to deploy the application
 deploy() {
     log "Starting deployment..."
-    
+
     check_prerequisites
-    
+
     # Load environment variables
     if [ -f "$ENV_FILE" ]; then
         source "$ENV_FILE"
@@ -224,47 +224,47 @@ deploy() {
         create_env_file
         source "$ENV_FILE"
     fi
-    
+
     # Build and start services
     log "Building and starting SSL-enabled services..."
-    
+
     if [ "$MODE" = "development" ]; then
         docker-compose -f "$COMPOSE_FILE" up --build blog-dev
     else
         docker-compose -f "$COMPOSE_FILE" up --build -d blog-prod-ssl
-        
+
         # Wait for service to be ready
         log "Waiting for service to be ready..."
         sleep 10
-        
+
         # Check health
         check_health
     fi
-    
+
     success "Deployment completed!"
 }
 
 # Function to start production mode
 start_production() {
     log "Starting production mode with SSL..."
-    
+
     check_prerequisites
-    
+
     # Ensure .env exists
     if [ ! -f "$ENV_FILE" ]; then
         warn "No configuration found. Running setup..."
         interactive_setup
     fi
-    
+
     # Load environment
     source "$ENV_FILE"
-    
+
     # Start with auto-renewal
     docker-compose -f "$COMPOSE_FILE" --profile auto-renew up --build -d
-    
+
     success "Production services started with SSL and auto-renewal"
     info "Services will automatically renew certificates"
-    
+
     # Show status
     show_status
 }
@@ -272,25 +272,25 @@ start_production() {
 # Function to start development mode
 start_development() {
     log "Starting development mode..."
-    
+
     check_prerequisites
-    
+
     docker-compose -f "$COMPOSE_FILE" up --build blog-dev
 }
 
 # Function to stop services
 stop_services() {
     log "Stopping all services..."
-    
+
     docker-compose -f "$COMPOSE_FILE" --profile "*" down
-    
+
     success "All services stopped"
 }
 
 # Function to restart services
 restart_services() {
     log "Restarting services..."
-    
+
     stop_services
     sleep 2
     deploy
@@ -299,7 +299,7 @@ restart_services() {
 # Function to show logs
 show_logs() {
     local service="${1:-}"
-    
+
     if [ -n "$service" ]; then
         docker-compose -f "$COMPOSE_FILE" logs -f "$service"
     else
@@ -310,33 +310,33 @@ show_logs() {
 # Function to show status
 show_status() {
     log "Checking service status..."
-    
+
     docker-compose -f "$COMPOSE_FILE" ps
-    
+
     echo ""
     highlight "=== Health Check Results ==="
-    
+
     # Check if blog service is running
     if docker-compose -f "$COMPOSE_FILE" ps | grep -q "blog-prod-ssl.*Up"; then
         success "Blog service is running"
-        
+
         # Test HTTP redirect
         if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "301\|200"; then
             success "HTTP endpoint responding"
         else
             warn "HTTP endpoint not responding"
         fi
-        
+
         # Test HTTPS
         if curl -s -k -o /dev/null -w "%{http_code}" https://localhost | grep -q "200"; then
             success "HTTPS endpoint responding"
         else
             warn "HTTPS endpoint not responding"
         fi
-        
+
     elif docker-compose -f "$COMPOSE_FILE" ps | grep -q "blog-dev.*Up"; then
         success "Development service is running"
-        
+
         if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 | grep -q "200"; then
             success "Development endpoint responding"
         else
@@ -350,10 +350,10 @@ show_status() {
 # Function to check health
 check_health() {
     log "Performing health checks..."
-    
+
     local max_attempts=30
     local attempt=0
-    
+
     while [ $attempt -lt $max_attempts ]; do
         if curl -s -f -k https://localhost/health >/dev/null 2>&1; then
             success "HTTPS health check passed"
@@ -362,12 +362,12 @@ check_health() {
             success "HTTP health check passed"
             return 0
         fi
-        
+
         attempt=$((attempt + 1))
         info "Health check attempt $attempt/$max_attempts..."
         sleep 2
     done
-    
+
     error "Health check failed after $max_attempts attempts"
     return 1
 }
@@ -375,38 +375,38 @@ check_health() {
 # Function to renew certificates
 renew_certificates() {
     log "Manually renewing SSL certificates..."
-    
+
     if [ -f "$ENV_FILE" ]; then
         source "$ENV_FILE"
     fi
-    
+
     # Run certbot renewal
     docker-compose -f "$COMPOSE_FILE" run --rm certbot certbot renew
-    
+
     # Restart nginx to reload certificates
     docker-compose -f "$COMPOSE_FILE" restart blog-prod-ssl
-    
+
     success "Certificate renewal completed"
 }
 
 # Function to show certificate information
 show_cert_info() {
     log "Retrieving SSL certificate information..."
-    
+
     if [ -f "$ENV_FILE" ]; then
         source "$ENV_FILE"
         local domain="${DOMAIN:-localhost}"
     else
         local domain="localhost"
     fi
-    
+
     # Check if certificate exists
     if docker-compose -f "$COMPOSE_FILE" exec blog-prod-ssl test -f "/etc/letsencrypt/live/$domain/fullchain.pem" 2>/dev/null; then
         echo ""
         highlight "=== Certificate Information ==="
         docker-compose -f "$COMPOSE_FILE" exec blog-prod-ssl openssl x509 -in "/etc/letsencrypt/live/$domain/fullchain.pem" -noout -text | grep -E "(Subject:|Not Before|Not After|DNS:)"
         echo ""
-        
+
         # Check expiry
         local days_until_expiry=$(docker-compose -f "$COMPOSE_FILE" exec blog-prod-ssl openssl x509 -in "/etc/letsencrypt/live/$domain/fullchain.pem" -noout -checkend 0 && echo "Valid" || echo "Expired")
         if [ "$days_until_expiry" = "Valid" ]; then
@@ -422,37 +422,37 @@ show_cert_info() {
 # Function to backup certificates
 backup_certificates() {
     local backup_dir="$PROJECT_ROOT/ssl-backup-$(date +%Y%m%d-%H%M%S)"
-    
+
     log "Creating SSL certificate backup..."
-    
+
     mkdir -p "$backup_dir"
-    
+
     # Backup certificates
     docker-compose -f "$COMPOSE_FILE" exec blog-prod-ssl tar czf - /etc/letsencrypt | tar xzf - -C "$backup_dir"
-    
+
     # Backup configuration
     cp "$ENV_FILE" "$backup_dir/.env.backup" 2>/dev/null || true
     cp "$COMPOSE_FILE" "$backup_dir/docker-compose.ssl.yaml.backup"
-    
+
     success "Backup created: $backup_dir"
 }
 
 # Function to clean up
 cleanup() {
     log "Cleaning up containers and volumes..."
-    
+
     read -p "This will remove all containers, images, and volumes. Continue? (y/N): " confirm
     if [[ ! $confirm =~ ^[Yy]$ ]]; then
         warn "Cleanup cancelled"
         return 0
     fi
-    
+
     # Stop and remove containers
     docker-compose -f "$COMPOSE_FILE" --profile "*" down -v --remove-orphans
-    
+
     # Remove images
     docker-compose -f "$COMPOSE_FILE" --profile "*" down --rmi all
-    
+
     success "Cleanup completed"
 }
 
@@ -460,7 +460,7 @@ cleanup() {
 main() {
     local command="${1:-}"
     shift || true
-    
+
     # Parse options
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -502,7 +502,7 @@ main() {
                 ;;
         esac
     done
-    
+
     # Execute command
     case $command in
         setup)

@@ -1,4 +1,4 @@
-# 🚀 Gladys Blog Deployment
+# 🚀 GladysAI-Blog Deployment
 
 Complete guide for deploying Hugo blog using Docker and Jenkins.
 
@@ -15,7 +15,7 @@ Complete guide for deploying Hugo blog using Docker and Jenkins.
 
 ## 🎯 Overview
 
-Gladys Blog is a static site created with Hugo and deployed in Docker containers with Nginx. The project supports:
+GladysAI-Blog is a static site created with Hugo and deployed in Docker containers with Nginx. The project supports:
 
 - ✅ **Local deployment** for development and testing
 - ✅ **Automatic deployment** via Jenkins CI/CD
@@ -396,7 +396,7 @@ check_health() {
         curl -X POST "$WEBHOOK_URL" \
              -H "Content-Type: application/json" \
              -d '{"content":"🚨 Gladys Blog is down!"}'
-        
+
         # Restart container
         docker restart "$CONTAINER_NAME"
     fi
