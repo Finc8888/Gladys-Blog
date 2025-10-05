@@ -85,7 +85,7 @@ pipeline {
 
         stage('Build Hugo Site') {
             when {
-                not { params.SKIP_TESTS }
+                expression { !params.SKIP_TESTS }
             }
             steps {
                 script {

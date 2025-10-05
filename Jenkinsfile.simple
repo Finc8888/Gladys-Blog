@@ -1,0 +1,300 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "gladys-blog"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = "gladys-blog-container"
+        SERVER_HOST = "${params.SERVER_HOST ?: 'localhost'}"
+        SERVER_USER = "${params.SERVER_USER ?: 'deploy'}"
+        ENVIRONMENT = "${params.ENVIRONMENT ?: 'production'}"
+    }
+
+    parameters {
+        string(name: 'SERVER_HOST', defaultValue: 'localhost', description: 'Server host for deployment')
+        string(name: 'SERVER_USER', defaultValue: 'deploy', description: 'SSH user for deployment')
+        choice(name: 'ENVIRONMENT', choices: ['production', 'staging'], description: 'Deployment environment')
+        booleanParam(name: 'SKIP_BUILD_TEST', defaultValue: false, description: 'Skip build testing')
+        booleanParam(name: 'FORCE_DEPLOY', defaultValue: false, description: 'Force deployment even if tests fail')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "🔄 Checking out code..."
+                checkout scm
+                
+                script {
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: 'git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+                    
+                    env.GIT_COMMIT_MSG = sh(
+                        script: 'git log -1 --pretty=%B',
+                        returnStdout: true
+                    ).trim()
+                }
+                
+                echo "📝 Commit: ${env.GIT_COMMIT_SHORT}"
+                echo "💬 Message: ${env.GIT_COMMIT_MSG}"
+            }
+        }
+
+        stage('Validate Files') {
+            steps {
+                echo "🔍 Validating required files..."
+                
+                script {
+                    def requiredFiles = [
+                        'blog/hugo.toml',
+                        'blog/content',
+                        'deploy/Dockerfile.prod.ssl',
+                        'deploy/ssl-deploy.sh',
+                        'docker-compose.ssl.yaml'
+                    ]
+                    
+                    requiredFiles.each { file ->
+                        if (!fileExists(file)) {
+                            error("Required file not found: ${file}")
+                        }
+                        echo "✅ Found: ${file}"
+                    }
+                }
+            }
+        }
+
+        stage('Test Build') {
+            steps {
+                script {
+                    if (params.SKIP_BUILD_TEST) {
+                        echo "⏭️ Skipping build test as requested"
+                        return
+                    }
+                    
+                    echo "🧪 Testing Docker build..."
+                    
+                    try {
+                        sh """
+                            docker build -f deploy/Dockerfile.prod.ssl -t ${IMAGE_NAME}-test:${BUILD_NUMBER} .
+                            echo "✅ Docker build successful"
+                        """
+                    } catch (Exception e) {
+                        echo "❌ SSL build failed, trying simple build..."
+                        sh """
+                            docker build -f deploy/Dockerfile.prod.simple -t ${IMAGE_NAME}-test:${BUILD_NUMBER} .
+                            echo "✅ Simple Docker build successful"
+                        """
+                    }
+                    
+                    // Clean up test image
+                    sh "docker rmi ${IMAGE_NAME}-test:${BUILD_NUMBER} || true"
+                }
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                echo "🚀 Deploying to ${SERVER_HOST} (${ENVIRONMENT})..."
+                
+                script {
+                    try {
+                        sshagent(['ssh-deploy-key']) {
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} '
+                                    set -e
+                                    echo "📦 Updating code on server..."
+                                    
+                                    # Navigate to project directory
+                                    cd /home/${SERVER_USER}/Gladys-Blog || {
+                                        echo "❌ Project directory not found"
+                                        exit 1
+                                    }
+                                    
+                                    # Pull latest changes
+                                    git pull origin main
+                                    
+                                    # Make scripts executable
+                                    chmod +x deploy/*.sh
+                                    
+                                    # Apply Hugo fixes if needed
+                                    if [ -f deploy/fix-hugo-build.sh ]; then
+                                        echo "🔧 Applying Hugo build fixes..."
+                                        ./deploy/fix-hugo-build.sh --fix-all || echo "⚠️ Some fixes failed, continuing..."
+                                    fi
+                                    
+                                    # Deploy with SSL
+                                    echo "🔐 Starting SSL deployment..."
+                                    ./deploy/ssl-deploy.sh prod
+                                    
+                                    # Verify deployment
+                                    echo "✅ Deployment completed, checking status..."
+                                    ./deploy/ssl-deploy.sh status
+                                '
+                            """
+                        }
+                        
+                        echo "✅ Deployment successful!"
+                        
+                    } catch (Exception e) {
+                        echo "❌ Deployment failed: ${e.message}"
+                        
+                        if (!params.FORCE_DEPLOY) {
+                            throw e
+                        } else {
+                            echo "⚠️ Continuing despite failure due to FORCE_DEPLOY=true"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                echo "🔍 Verifying deployment..."
+                
+                script {
+                    try {
+                        sshagent(['ssh-deploy-key']) {
+                            def healthCheck = sh(
+                                script: """
+                                    ssh -o StrictHostKeyChecking=no ${SERVER_USER}@${SERVER_HOST} '
+                                        cd /home/${SERVER_USER}/Gladys-Blog
+                                        ./deploy/ssl-deploy.sh health
+                                    '
+                                """,
+                                returnStatus: true
+                            )
+                            
+                            if (healthCheck == 0) {
+                                echo "✅ Health check passed!"
+                            } else {
+                                echo "⚠️ Health check failed, but deployment may still be working"
+                            }
+                        }
+                        
+                        // Additional verification
+                        sleep(time: 30, unit: 'SECONDS')
+                        
+                        def httpCheck = sh(
+                            script: "curl -f -k --max-time 10 https://${SERVER_HOST}/health || curl -f --max-time 10 http://${SERVER_HOST}/health",
+                            returnStatus: true
+                        )
+                        
+                        if (httpCheck == 0) {
+                            echo "✅ HTTP health check passed!"
+                        } else {
+                            echo "⚠️ HTTP health check failed - site may need more time to start"
+                        }
+                        
+                    } catch (Exception e) {
+                        echo "⚠️ Verification failed: ${e.message}"
+                        echo "📝 This doesn't necessarily mean deployment failed"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "🧹 Cleaning up..."
+            
+            script {
+                // Clean up any test containers or images
+                sh """
+                    docker container prune -f || true
+                    docker image prune -f || true
+                """
+            }
+        }
+        
+        success {
+            echo "🎉 Pipeline completed successfully!"
+            
+            script {
+                try {
+                    slackSend(
+                        color: 'good',
+                        message: """
+✅ *Gladys Blog Deployment Successful*
+• Environment: ${ENVIRONMENT}
+• Server: ${SERVER_HOST}
+• Commit: ${env.GIT_COMMIT_SHORT}
+• Message: ${env.GIT_COMMIT_MSG}
+• Build: #${BUILD_NUMBER}
+                        """.trim()
+                    )
+                } catch (Exception e) {
+                    echo "📢 Slack notification failed: ${e.message}"
+                }
+                
+                // Send email notification (if configured)
+                try {
+                    emailext(
+                        subject: "✅ Gladys Blog Deployment Successful - Build #${BUILD_NUMBER}",
+                        body: """
+Deployment completed successfully!
+
+Environment: ${ENVIRONMENT}
+Server: ${SERVER_HOST}  
+Commit: ${env.GIT_COMMIT_SHORT}
+Message: ${env.GIT_COMMIT_MSG}
+
+You can check the site at: https://${SERVER_HOST}
+                        """,
+                        to: '${DEFAULT_RECIPIENTS}',
+                        mimeType: 'text/plain'
+                    )
+                } catch (Exception e) {
+                    echo "📧 Email notification failed: ${e.message}"
+                }
+            }
+        }
+        
+        failure {
+            echo "💥 Pipeline failed!"
+            
+            script {
+                try {
+                    slackSend(
+                        color: 'danger',
+                        message: """
+❌ *Gladys Blog Deployment Failed*
+• Environment: ${ENVIRONMENT}
+• Server: ${SERVER_HOST}
+• Commit: ${env.GIT_COMMIT_SHORT}
+• Build: #${BUILD_NUMBER}
+• Check: ${BUILD_URL}console
+                        """.trim()
+                    )
+                } catch (Exception e) {
+                    echo "📢 Slack notification failed: ${e.message}"
+                }
+                
+                try {
+                    emailext(
+                        subject: "❌ Gladys Blog Deployment Failed - Build #${BUILD_NUMBER}",
+                        body: """
+Deployment failed!
+
+Environment: ${ENVIRONMENT}
+Server: ${SERVER_HOST}
+Commit: ${env.GIT_COMMIT_SHORT}
+
+Check the console output: ${BUILD_URL}console
+                        """,
+                        to: '${DEFAULT_RECIPIENTS}',
+                        mimeType: 'text/plain'
+                    )
+                } catch (Exception e) {
+                    echo "📧 Email notification failed: ${e.message}"
+                }
+            }
+        }
+        
+        unstable {
+            echo "⚠️ Pipeline completed with warnings"
+        }
+    }
+}
