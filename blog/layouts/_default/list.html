@@ -1,0 +1,413 @@
+
+
+{{ define "main" }}
+
+<style>
+/* Dark theme CSS for post lists - injected directly */
+body {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0 !important;
+}
+
+.content {
+    background-color: #1a1a1a !important;
+}
+
+/* Header styling */
+.header, header {
+    background-color: #2d2d2d !important;
+    color: #f0f0f0 !important;
+    border-bottom: 2px solid #4a90e2 !important;
+}
+
+.header h1, header h1 {
+    color: #4a90e2 !important;
+}
+
+.header h1 a, header h1 a {
+    color: #4a90e2 !important;
+}
+
+.header .subtitle, header .subtitle, .subtitle {
+    color: #b0b0b0 !important;
+}
+
+/* Navigation */
+.nav a, nav a {
+    color: #87ceeb !important;
+}
+
+.nav a:hover, nav a:hover {
+    color: #ffffff !important;
+}
+
+/* Main content */
+main {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0 !important;
+}
+
+/* Page titles */
+h1, .page-title {
+    color: #f0f0f0 !important;
+    border-bottom: 2px solid #4a90e2 !important;
+}
+
+h2, h3, h4, h5, h6 {
+    color: #e0e0e0 !important;
+}
+
+/* Posts list */
+.posts, ul.posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background-color: #1a1a1a !important;
+}
+
+.posts li, ul.posts li, .post {
+    background-color: #2d2d2d !important;
+    margin: 1rem 0;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #4a90e2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.posts li:hover, ul.posts li:hover, .post:hover {
+    background-color: #3d3d3d !important;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+    transform: translateY(-2px);
+}
+
+.posts li a, ul.posts li a, .post a {
+    color: #87ceeb !important;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.posts li a:hover, ul.posts li a:hover, .post a:hover {
+    color: #ffffff !important;
+}
+
+.meta, .post-meta, span.meta {
+    color: #b0b0b0 !important;
+}
+
+.draft-label {
+    background-color: #e74c3c !important;
+    color: #ffffff !important;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.post-summary, .post-description, p {
+    color: #c0c0c0 !important;
+}
+
+.post-tags .tag, .tags .tag, .tag {
+    background-color: #4a90e2 !important;
+    color: #ffffff !important;
+    padding: 0.2rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.tag:hover {
+    background-color: #357abd !important;
+}
+
+/* Links */
+a {
+    color: #87ceeb !important;
+}
+
+a:hover {
+    color: #ffffff !important;
+}
+</style>
+
+<div class="list-container">
+</div>
+
+<script>
+// Apply dark theme to body immediately
+document.body.style.backgroundColor = '#1a1a1a';
+document.body.style.color = '#e0e0e0';
+
+// Apply to content wrapper
+const contentDiv = document.querySelector('.content');
+if (contentDiv) {
+    contentDiv.style.backgroundColor = '#1a1a1a';
+}
+</script>
+
+<div class="list-container">
+    {{ if isset .Data "Term" }}
+    <h1 class="page-title">📂 Записи с тегом "{{ .Data.Term }}"</h1>
+    {{ else if eq .Type "posts" }}
+    <h1 class="page-title">📚 Все записи блога</h1>
+    {{ else }}
+    <h1 class="page-title">📋 {{ .Title }}</h1>
+    {{ end }}
+
+    {{ if .Content }}
+    <div class="page-description">
+        {{ .Content }}
+    </div>
+    {{ end }}
+
+    {{ $posts := .Data.Pages }}
+    {{ if eq .Type "posts" }}
+        {{ $posts = where site.RegularPages "Type" "posts" }}
+    {{ end }}
+
+    {{ if $posts }}
+    <div class="posts-count">
+        <span>📈 Найдено записей: {{ len $posts }}</span>
+    </div>
+
+    <ul class="posts">
+        {{ range $posts }}
+        <li class="post">
+            <div class="post-header">
+                <h2 class="post-title">
+                    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                </h2>
+                <div class="post-meta">
+                    {{ if .Date }}
+                    <span class="meta-date">📅 {{ .Date.Format "02.01.2006" }}</span>
+                    {{ end }}
+                    {{ if .ReadingTime }}
+                    <span class="meta-separator">•</span>
+                    <span class="meta-reading-time">⏱️ {{ .ReadingTime }} мин.</span>
+                    {{ end }}
+                    {{ if .Draft }}
+                    <span class="draft-label">ЧЕРНОВИК</span>
+                    {{ end }}
+                </div>
+            </div>
+
+            {{ if .Params.description }}
+            <div class="post-description">
+                {{ .Params.description }}
+            </div>
+            {{ else if .Summary }}
+            <div class="post-summary">
+                {{ .Summary | truncate 200 }}
+            </div>
+            {{ end }}
+
+            {{ if .Params.tags }}
+            <div class="post-tags">
+                🏷️
+                {{ range .Params.tags }}
+                    <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="tag">{{ . }}</a>
+                {{ end }}
+            </div>
+            {{ end }}
+
+            <div class="post-footer">
+                <a href="{{ .RelPermalink }}" class="read-more">Читать далее →</a>
+                {{ if .Params.tldr }}
+                <span class="meta-separator">•</span>
+                <span class="tldr">💡 {{ .Params.tldr | truncate 100 }}</span>
+                {{ end }}
+            </div>
+        </li>
+        {{ end }}
+    </ul>
+
+    {{ if gt (len $posts) 10 }}
+    <div class="load-more">
+        <p>💫 Показаны последние записи</p>
+    </div>
+    {{ end }}
+
+    {{ else }}
+    <div class="no-posts">
+        <div class="no-posts-content">
+            <h2></h2>🔍 Ничего не найдено</h2>
+            <p>К сожалению, записей в этом разделе пока нет.</p>
+            <a href="/" class="back-home">← Вернуться на главную</a>
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Archive by year (optional) -->
+    {{ if eq .Type "posts" }}
+    <div class="archive-section">
+        <h3>📁 Архив по годам</h3>
+        <div class="archive-years">
+            {{ range ($posts.GroupByDate "2006") }}
+            <div class="archive-year">
+                <a href="#year-{{ .Key }}" class="year-link">{{ .Key }} ({{ len .Pages }})</a>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+    {{ end }}
+</div>
+
+<style>
+/* Additional specific styling for this layout */
+.list-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.posts-count {
+    margin: 1rem 0 2rem 0;
+    font-size: 0.9rem;
+    color: #b0b0b0 !important;
+    text-align: right;
+}
+
+.post-header {
+    margin-bottom: 1rem;
+}
+
+.post-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+
+.post-title a {
+    color: #87ceeb !important;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.post-title a:hover {
+    color: #ffffff !important;
+}
+
+.post-description,
+.post-summary {
+    color: #c0c0c0 !important;
+    line-height: 1.6;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+}
+
+.post-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #404040;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.read-more {
+    color: #4a90e2 !important;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.read-more:hover {
+    color: #ffffff !important;
+}
+
+.tldr {
+    color: #a0a0a0 !important;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.meta-separator {
+    color: #666666 !important;
+    margin: 0 0.5rem;
+}
+
+.no-posts {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.no-posts-content h2 {
+    color: #f0f0f0 !important;
+    margin-bottom: 1rem;
+}
+
+.no-posts-content p {
+    color: #b0b0b0 !important;
+    margin-bottom: 2rem;
+}
+
+.back-home {
+    color: #87ceeb !important;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 1px solid #4a90e2;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.back-home:hover {
+    background-color: #4a90e2 !important;
+    color: #ffffff !important;
+}
+
+.archive-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid #404040;
+}
+
+.archive-section h3 {
+    color: #f0f0f0 !important;
+    margin-bottom: 1rem;
+}
+
+.archive-years {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.year-link {
+    color: #87ceeb !important;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    background-color: #3d3d3d;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.year-link:hover {
+    background-color: #4a90e2 !important;
+    color: #ffffff !important;
+}
+
+.load-more {
+    text-align: center;
+    margin-top: 2rem;
+    color: #b0b0b0 !important;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .list-container {
+        padding: 1rem;
+    }
+    
+    .post-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .archive-years {
+        justify-content: center;
+    }
+}
+</style>
+
+{{ end }}

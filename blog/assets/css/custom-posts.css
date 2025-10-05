@@ -6,8 +6,8 @@
 }
 
 body {
-    background-color: #f8f9fa;
-    color: #2c3e50;
+    background-color: #faf8f3;
+    color: #3a3a3a;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
 }
@@ -22,16 +22,16 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
-    background-color: #fdfdfd;
-    color: #2c3e50;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #fefcf7;
+    color: #3a3a3a;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
 }
 
 .post-content {
     line-height: 1.7;
-    color: #2c3e50;
-    background-color: #fdfdfd;
+    color: #3a3a3a;
+    background-color: #fefcf7;
 }
 
 /* Typography - Light theme only */
@@ -45,52 +45,52 @@ body {
     font-weight: 600;
     margin-top: 2rem;
     margin-bottom: 1rem;
-    color: #2c3e50;
+    color: #4a4a4a;
 }
 
 .post-content h1 {
     font-size: 2.5rem;
-    border-bottom: 3px solid #007acc;
+    border-bottom: 2px solid #8fa5b8;
     padding-bottom: 0.5rem;
     margin-bottom: 2rem;
-    color: #2c3e50;
+    color: #4a4a4a;
 }
 
 .post-content h2 {
     font-size: 2rem;
-    color: #34495e;
-    border-bottom: 2px solid #e1e8ed;
+    color: #5a5a5a;
+    border-bottom: 1px solid #e8e1d6;
     padding-bottom: 0.3rem;
 }
 
 .post-content h3 {
     font-size: 1.5rem;
-    color: #34495e;
+    color: #5a5a5a;
 }
 
 .post-content h4 {
     font-size: 1.25rem;
-    color: #2c3e50;
+    color: #4a4a4a;
 }
 
 /* Paragraphs */
 .post-content p {
     margin-bottom: 1.5rem;
-    color: #2c3e50;
+    color: #3a3a3a;
     text-align: left;
 }
 
 /* Links */
 .post-content a {
-    color: #007acc;
+    color: #7a95a6;
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: all 0.3s ease;
 }
 
 .post-content a:hover {
-    color: #005c99;
-    border-bottom: 1px solid #007acc;
+    color: #5a7a8a;
+    border-bottom: 1px solid #7a95a6;
 }
 
 /* Lists */
@@ -98,7 +98,7 @@ body {
 .post-content ol {
     margin: 1.5rem 0;
     padding-left: 2rem;
-    color: #2c3e50;
+    color: #3a3a3a;
 }
 
 .post-content li {
@@ -115,29 +115,29 @@ body {
 
 /* Code blocks */
 .post-content code {
-    background-color: #f1f3f4;
-    color: #c7254e;
-    padding: 2px 6px;
-    border-radius: 3px;
+    background-color: #f5f1ea;
+    color: #b85c57;
+    padding: 3px 7px;
+    border-radius: 4px;
     font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
     font-size: 0.9em;
-    border: 1px solid #d1d5da;
+    border: 1px solid #e8dcc6;
 }
 
 .post-content pre {
-    background-color: #f3f4f6;
-    color: #1f2937;
+    background-color: #f7f3ec;
+    color: #4a4a4a;
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow-x: auto;
     margin: 1.5rem 0;
-    border: 1px solid #d1d5da;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e8dcc6;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
 .post-content pre code {
     background-color: transparent;
-    color: #1f2937;
+    color: #4a4a4a;
     padding: 0;
     font-size: 0.95em;
     border: none;
@@ -148,50 +148,50 @@ body {
     width: 100%;
     border-collapse: collapse;
     margin: 2rem 0;
-    background-color: #fdfdfd;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    background-color: #fefcf7;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
     overflow: hidden;
-    border: 1px solid #d1d5da;
+    border: 1px solid #e8dcc6;
 }
 
 .post-content table th {
-    background-color: #f1f3f4;
-    color: #1f2937;
+    background-color: #f2ede0;
+    color: #4a4a4a;
     padding: 1rem;
     text-align: left;
     font-weight: 600;
-    border-bottom: 2px solid #d1d5da;
+    border-bottom: 1px solid #e8dcc6;
 }
 
 .post-content table td {
     padding: 1rem;
-    border-bottom: 1px solid #d1d5da;
-    color: #2c3e50;
+    border-bottom: 1px solid #e8dcc6;
+    color: #3a3a3a;
 }
 
 .post-content table tr:nth-child(even) {
-    background-color: #f6f8fa;
+    background-color: #faf7ef;
 }
 
 .post-content table tr:hover {
-    background-color: #e6f3ff;
+    background-color: #f5f0e3;
 }
 
 /* Blockquotes */
 .post-content blockquote {
-    border-left: 4px solid #007acc;
-    background-color: #f3f4f6;
+    border-left: 4px solid #a8b8c4;
+    background-color: #f7f3ec;
     padding: 1rem 1.5rem;
     margin: 2rem 0;
     font-style: italic;
-    color: #4b5563;
-    border-radius: 0 4px 4px 0;
+    color: #5a5a5a;
+    border-radius: 0 6px 6px 0;
 }
 
 .post-content blockquote p {
     margin-bottom: 0.5rem;
-    color: #4b5563;
+    color: #5a5a5a;
 }
 
 .post-content blockquote p:last-child {
@@ -212,27 +212,27 @@ body {
 
 /* Post metadata */
 .post-meta {
-    background-color: #f3f4f6;
+    background-color: #f7f3ec;
     padding: 1.5rem;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 2rem;
-    border-left: 4px solid #007acc;
-    border: 1px solid #d1d5da;
+    border-left: 4px solid #a8b8c4;
+    border: 1px solid #e8dcc6;
 }
 
 .post-meta h3 {
     margin-top: 0;
-    color: #2c3e50;
+    color: #4a4a4a;
 }
 
 .post-meta .meta-item {
     margin: 0.5rem 0;
-    color: #4b5563;
+    color: #5a5a5a;
 }
 
 .post-meta .meta-label {
     font-weight: 600;
-    color: #2c3e50;
+    color: #4a4a4a;
 }
 
 /* Tags */
@@ -242,7 +242,7 @@ body {
 
 .post-tags .tag {
     display: inline-block;
-    background-color: #007acc;
+    background-color: #a8b8c4;
     color: #ffffff;
     padding: 0.3rem 0.8rem;
     border-radius: 20px;
@@ -253,7 +253,7 @@ body {
 }
 
 .post-tags .tag:hover {
-    background-color: #005c99;
+    background-color: #8a9eab;
     color: #ffffff;
 }
 
@@ -261,20 +261,20 @@ body {
 
 /* Strong and emphasis */
 .post-content strong {
-    color: #2c3e50;
+    color: #4a4a4a;
     font-weight: 700;
 }
 
 .post-content em {
-    color: #34495e;
+    color: #5a5a5a;
     font-style: italic;
 }
 
 /* Horizontal rules */
 .post-content hr {
     border: none;
-    height: 2px;
-    background: linear-gradient(to right, #007acc, #005c99);
+    height: 1px;
+    background: linear-gradient(to right, #c4d1d8, #a8b8c4);
     margin: 3rem 0;
     border-radius: 1px;
 }
