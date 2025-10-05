@@ -1,0 +1,124 @@
+# Multi-stage Dockerfile for production-ready Hugo blog with SSL support
+FROM alpine:latest as hugo-builder
+
+# Install Hugo
+WORKDIR /src
+RUN apk add --no-cache \
+    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+    hugo \
+    git \
+    && rm -rf /var/cache/apk/*
+
+# Copy blog source files
+COPY blog/ ./
+
+# Validate Hugo configuration
+RUN hugo version && \
+    hugo config && \
+    ls -la
+
+# Build static site with optimizations
+RUN hugo \
+    --minify \
+    --enableGitInfo \
+    --destination /dist \
+    --baseURL "/" \
+    --cleanDestinationDir \
+    --gc
+
+# Verify that the site was built successfully
+RUN ls -la /dist && \
+    test -f /dist/index.html || (echo "ERROR: index.html not found!" && exit 1)
+
+# Production image with Nginx and SSL support
+FROM nginx:alpine
+
+# Metadata
+LABEL maintainer="gladys-blog" \
+      version="1.0-ssl" \
+      description="Production Hugo blog with Nginx and SSL support"
+
+# Install additional packages for SSL and monitoring
+RUN apk add --no-cache \
+    curl \
+    bash \
+    certbot \
+    certbot-nginx \
+    openssl \
+    && rm -rf /var/cache/apk/*
+
+# Create user for nginx (security)
+RUN addgroup -g 1001 -S nginx-app && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-app -g nginx-app nginx-app
+
+# Copy built site
+COPY --from=hugo-builder /dist /usr/share/nginx/html
+
+# Copy SSL-enabled Nginx configuration
+COPY deploy/nginx-ssl.conf /etc/nginx/nginx.conf
+
+# Generate DH parameters for additional security
+RUN openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+
+# Create necessary directories and set permissions
+RUN mkdir -p /var/cache/nginx/client_temp \
+             /var/cache/nginx/proxy_temp \
+             /var/cache/nginx/fastcgi_temp \
+             /var/cache/nginx/uwsgi_temp \
+             /var/cache/nginx/scgi_temp \
+             /var/log/nginx \
+             /var/www/certbot \
+             /etc/letsencrypt \
+             /var/lib/letsencrypt && \
+    chown -R nginx-app:nginx-app /var/cache/nginx \
+                                 /var/log/nginx \
+                                 /usr/share/nginx/html \
+                                 /var/www/certbot && \
+    chmod -R 755 /usr/share/nginx/html \
+                 /var/www/certbot && \
+    chmod 644 /etc/ssl/certs/dhparam.pem
+
+# Optimize static files (if present)
+RUN find /usr/share/nginx/html -type f -name "*.html" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true && \
+    find /usr/share/nginx/html -type f -name "*.css" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true && \
+    find /usr/share/nginx/html -type f -name "*.js" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true
+
+# Copy SSL entrypoint script
+COPY deploy/entrypoint-ssl.sh /docker-entrypoint.sh
+
+# Set permissions for entrypoint script
+RUN chmod +x /docker-entrypoint.sh
+
+# Health check (using HTTPS)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD curl -f -k https://localhost/health || curl -f http://localhost/health || exit 1
+
+# Security: expose both HTTP (for redirect) and HTTPS ports
+EXPOSE 80 443
+
+# Environment variables
+ENV NGINX_WORKER_PROCESSES=auto \
+    NGINX_WORKER_CONNECTIONS=1024 \
+    NGINX_KEEPALIVE_TIMEOUT=65 \
+    DOMAIN=localhost \
+    EMAIL=admin@localhost
+
+# Volume for SSL certificates
+VOLUME ["/etc/letsencrypt", "/var/www/certbot"]
+
+# Use unprivileged user (will be changed in entrypoint for certbot operations)
+USER root
+
+# Entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+# Default command
+CMD ["nginx", "-g", "daemon off;"]
+
+# Add OCI metadata
+LABEL org.opencontainers.image.title="Gladys Blog SSL" \
+      org.opencontainers.image.description="Production-ready Hugo blog with Nginx and SSL support" \
+      org.opencontainers.image.vendor="Gladys Blog" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/your-repo/gladys-blog" \
+      org.opencontainers.image.documentation="https://github.com/your-repo/gladys-blog/README.md"

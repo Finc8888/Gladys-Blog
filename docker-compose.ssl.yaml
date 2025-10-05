@@ -1,0 +1,192 @@
+services:
+  # Development service with hot reload (HTTP only for development)
+  blog-dev:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    container_name: gladys-blog-dev
+    ports:
+      - "8080:1313"
+    volumes:
+      - ./blog:/blog
+    environment:
+      - HUGO_ENV=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:1313/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    develop:
+      watch:
+        - action: sync
+          path: ./blog
+          target: /blog
+        - action: rebuild
+          path: ./deploy/Dockerfile
+
+  # Production service with SSL support
+  blog-prod-ssl:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.prod.ssl
+    container_name: gladys-blog-prod-ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # SSL certificates volume
+      - ssl-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+      # Optional: bind mount for persistent certificates
+      # - ./ssl/letsencrypt:/etc/letsencrypt
+      # - ./ssl/certbot:/var/www/certbot
+    environment:
+      # Replace with your actual domain
+      - DOMAIN=${DOMAIN:-localhost}
+      # Replace with your email for Let's Encrypt
+      - EMAIL=${EMAIL:-admin@localhost}
+      # Set to 1 for Let's Encrypt staging (testing)
+      - STAGING=${STAGING:-0}
+      # Set to 1 to force certificate renewal
+      - FORCE_RENEWAL=${FORCE_RENEWAL:-0}
+      # Set to 0 to disable self-signed fallback
+      - FALLBACK_SELFSIGNED=${FALLBACK_SELFSIGNED:-1}
+      # Nginx settings
+      - NGINX_WORKER_PROCESSES=auto
+      - NGINX_WORKER_CONNECTIONS=1024
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f -k https://localhost/health || curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+  # Standalone Certbot service for certificate management
+  certbot:
+    image: certbot/certbot:latest
+    container_name: gladys-blog-certbot
+    volumes:
+      - ssl-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - EMAIL=${EMAIL:-admin@localhost}
+    command: >
+      sh -c "
+        if [ '${DOMAIN:-localhost}' != 'localhost' ]; then
+          certbot certonly --webroot -w /var/www/certbot -d ${DOMAIN} --email ${EMAIL} --agree-tos --non-interactive ${STAGING:+--staging} || exit 0
+        else
+          echo 'Skipping certbot for localhost'
+        fi
+      "
+    profiles:
+      - manual-cert
+    depends_on:
+      - blog-prod-ssl
+
+  # Certificate renewal service
+  certbot-renew:
+    image: certbot/certbot:latest
+    container_name: gladys-blog-certbot-renew
+    volumes:
+      - ssl-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    command: >
+      sh -c "
+        while :; do
+          sleep 12h
+          if [ '${DOMAIN:-localhost}' != 'localhost' ]; then
+            certbot renew --webroot -w /var/www/certbot
+          fi
+        done
+      "
+    profiles:
+      - auto-renew
+    depends_on:
+      - blog-prod-ssl
+
+  # Nginx proxy for advanced SSL termination (optional)
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: gladys-blog-nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ssl-certs:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    restart: unless-stopped
+    profiles:
+      - proxy
+    depends_on:
+      - blog-prod-ssl
+
+  # SSL monitoring service
+  ssl-monitor:
+    image: alpine:latest
+    container_name: gladys-blog-ssl-monitor
+    volumes:
+      - ssl-certs:/etc/letsencrypt:ro
+    command: >
+      sh -c "
+        apk add --no-cache openssl curl
+        while :; do
+          if [ -f '/etc/letsencrypt/live/${DOMAIN:-localhost}/fullchain.pem' ]; then
+            days_until_expiry=$$(openssl x509 -in '/etc/letsencrypt/live/${DOMAIN:-localhost}/fullchain.pem' -noout -checkend 2592000 && echo '30+' || echo 'less than 30')
+            echo \"SSL Certificate expires in: \$$days_until_expiry days\"
+          fi
+          sleep 24h
+        done
+      "
+    profiles:
+      - monitoring
+    restart: unless-stopped
+
+volumes:
+  # Named volumes for SSL certificates
+  ssl-certs:
+    driver: local
+  certbot-webroot:
+    driver: local
+
+networks:
+  # Custom network for SSL-enabled blog services
+  default:
+    name: gladys-blog-ssl-network
+    driver: bridge
+
+# Docker Compose profiles usage:
+# Default: docker-compose -f docker-compose.ssl.yaml up blog-prod-ssl
+# With manual cert: docker-compose -f docker-compose.ssl.yaml --profile manual-cert up
+# With auto-renew: docker-compose -f docker-compose.ssl.yaml --profile auto-renew up -d
+# With proxy: docker-compose -f docker-compose.ssl.yaml --profile proxy up
+# With monitoring: docker-compose -f docker-compose.ssl.yaml --profile monitoring up -d
+# Development: docker-compose -f docker-compose.ssl.yaml up blog-dev
+
+# Environment variables can be set in .env file:
+# DOMAIN=yourdomain.com
+# EMAIL=your-email@example.com
+# STAGING=0
+# FORCE_RENEWAL=0
+# FALLBACK_SELFSIGNED=1

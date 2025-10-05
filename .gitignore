@@ -1,0 +1,301 @@
+# =============================================================================
+# Gladys Blog - Security-focused .gitignore
+# =============================================================================
+
+# ================================
+# SECURITY SENSITIVE FILES
+# ================================
+
+# Environment files with secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+.env.ssl
+.env.prod
+.env.staging
+
+# SSL Certificates and Keys
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+ssl/
+certs/
+certificates/
+letsencrypt/
+ssl-backup-*/
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+*.ppk
+authorized_keys
+known_hosts
+
+# Docker secrets
+secrets/
+.docker/
+docker-secrets/
+
+# Jenkins credentials
+.jenkins-secrets
+jenkins-credentials/
+jenkins.xml
+secrets.xml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with sensitive data
+config.local.*
+config.production.*
+config.staging.*
+*-config.local.*
+
+# Backup files (may contain sensitive data)
+*.backup
+*.bak
+*.dump
+*.sql
+backup-*/
+backups/
+
+# ================================
+# LOGS AND TEMPORARY FILES
+# ================================
+
+# Log files
+*.log
+logs/
+log/
+access.log
+error.log
+nginx-*.log
+docker-*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+cache/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ================================
+# DOCKER & CONTAINERS
+# ================================
+
+# Docker volumes data
+volumes/
+docker-volumes/
+
+# Docker Compose override files
+docker-compose.override.yml
+docker-compose.override.yaml
+docker-compose.local.yml
+docker-compose.local.yaml
+
+# Container data
+data/
+postgres-data/
+mysql-data/
+redis-data/
+
+# ================================
+# BUILD ARTIFACTS
+# ================================
+
+# Hugo build output
+public/
+dist/
+build/
+out/
+
+# Node.js (if using any JS build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Go binaries (if using Go tools)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# ================================
+# DEVELOPMENT TOOLS
+# ================================
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Vi/Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# ================================
+# OPERATING SYSTEM
+# ================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ================================
+# MONITORING & METRICS
+# ================================
+
+# Monitoring data
+monitoring-data/
+metrics/
+grafana-data/
+prometheus-data/
+
+# ================================
+# TESTING
+# ================================
+
+# Test coverage
+coverage/
+.nyc_output/
+*.cover
+.coverage
+
+# Test artifacts
+test-results/
+test-output/
+
+# ================================
+# MISCELLANEOUS
+# ================================
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Images that might contain sensitive info
+screenshots/
+*.png
+*.jpg
+*.jpeg
+*.gif
+!blog/static/**/*.png
+!blog/static/**/*.jpg
+!blog/static/**/*.jpeg
+!blog/static/**/*.gif
+
+# Archives
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+
+# Local configuration overrides
+local.*
+*.local
+
+# Custom scripts with secrets
+deploy-secrets.sh
+secrets.sh
+private-*.sh
+
+# Third-party tools configuration
+.terraform/
+terraform.tfstate*
+.ansible/
+ansible-vault-password
+
+# Cloud provider credentials
+.aws/
+.gcp/
+.azure/
+
+# ================================
+# PROJECT SPECIFIC
+# ================================
+
+# Hugo resources that may contain processed data
+blog/resources/
+blog/.hugo_build.lock
+
+# Custom deployment artifacts
+deployment-artifacts/
+release-*/
+
+# Local development overrides
+docker-compose.dev.yml
+docker-compose.debug.yml
+
+# Performance testing
+load-test-results/
+benchmark-results/
+
+# ================================
+# ALLOW SPECIFIC FILES
+# ================================
+
+# Force include important template files
+!.env.example
+!.env.ssl.example
+!docker-compose.example.yml

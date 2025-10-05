@@ -1,0 +1,104 @@
+# Multi-stage Dockerfile for production-ready Hugo blog
+FROM alpine:latest as hugo-builder
+
+# Install Hugo
+WORKDIR /src
+RUN apk add --no-cache \
+    --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community \
+    hugo \
+    git \
+    && rm -rf /var/cache/apk/*
+
+# Copy blog source files
+COPY blog/ ./
+
+# Validate Hugo configuration
+RUN hugo version && \
+    hugo config && \
+    ls -la
+
+# Build static site with optimizations
+RUN hugo \
+    --minify \
+    --enableGitInfo \
+    --destination /dist \
+    --baseURL "/" \
+    --cleanDestinationDir \
+    --gc
+
+# Verify that the site was built successfully
+RUN ls -la /dist && \
+    test -f /dist/index.html || (echo "ERROR: index.html not found!" && exit 1)
+
+# Production image with Nginx
+FROM nginx:alpine
+
+# Metadata
+LABEL maintainer="gladys-blog" \
+      version="1.0" \
+      description="Production Hugo blog with Nginx"
+
+# Install additional packages for monitoring
+RUN apk add --no-cache \
+    curl \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Create user for nginx (security)
+RUN addgroup -g 1001 -S nginx-app && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx-app -g nginx-app nginx-app
+
+# Copy built site
+COPY --from=hugo-builder /dist /usr/share/nginx/html
+
+# Copy optimized Nginx configuration
+COPY deploy/nginx.conf /etc/nginx/nginx.conf
+
+# Create necessary directories and set permissions
+RUN mkdir -p /var/cache/nginx/client_temp \
+             /var/cache/nginx/proxy_temp \
+             /var/cache/nginx/fastcgi_temp \
+             /var/cache/nginx/uwsgi_temp \
+             /var/cache/nginx/scgi_temp \
+             /var/log/nginx && \
+    chown -R nginx-app:nginx-app /var/cache/nginx \
+                                 /var/log/nginx \
+                                 /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Optimize static files (if present)
+RUN find /usr/share/nginx/html -type f -name "*.html" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true && \
+    find /usr/share/nginx/html -type f -name "*.css" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true && \
+    find /usr/share/nginx/html -type f -name "*.js" -exec gzip -9 -c {} \; > {}.gz 2>/dev/null || true
+
+# Copy entrypoint script
+COPY deploy/entrypoint.sh /docker-entrypoint.sh
+
+# Set permissions for entrypoint script
+RUN chmod +x /docker-entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Security: using unprivileged port
+EXPOSE 80
+
+# Environment variables
+ENV NGINX_WORKER_PROCESSES=auto \
+    NGINX_WORKER_CONNECTIONS=1024 \
+    NGINX_KEEPALIVE_TIMEOUT=65
+
+# Use unprivileged user
+USER nginx-app
+
+# Entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+# Add OCI metadata
+LABEL org.opencontainers.image.title="Gladys Blog" \
+      org.opencontainers.image.description="Production-ready Hugo blog with Nginx" \
+      org.opencontainers.image.vendor="Gladys Blog" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/your-repo/gladys-blog" \
+      org.opencontainers.image.documentation="https://github.com/your-repo/gladys-blog/README.md"

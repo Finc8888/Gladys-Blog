@@ -1,0 +1,102 @@
+<header class="post-header">
+    <h1 class="post-title">{{ .Title }}</h1>
+    {{ if .Params.description }}
+    <p class="post-description">{{ .Params.description }}</p>
+    {{ end }}
+    
+    <div class="post-meta-header">
+        <time class="post-date" datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
+            {{ .Date.Format "2 January 2006" }}
+        </time>
+        
+        {{ if .Params.tags }}
+        <span class="post-meta-separator">•</span>
+        <span class="post-tag-count">{{ len .Params.tags }} 
+            {{ if eq (len .Params.tags) 1 }}тег{{ else }}тега{{ end }}
+        </span>
+        {{ end }}
+        
+        <span class="post-meta-separator">•</span>
+        <span class="reading-time">{{ .ReadingTime }} мин чтения</span>
+        
+        {{ if .Params.author }}
+        <span class="post-meta-separator">•</span>
+        <span class="post-author">{{ .Params.author }}</span>
+        {{ end }}
+    </div>
+</header>
+
+<style>
+.post-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.post-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.post-description {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.post-meta-header {
+    color: #95a5a6;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.post-meta-separator {
+    margin: 0 0.5rem;
+}
+
+.post-date {
+    color: #3498db;
+    font-weight: 500;
+}
+
+.post-tag-count,
+.reading-time,
+.post-author {
+    color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+    .post-header {
+        padding: 1rem 0;
+    }
+    
+    .post-title {
+        font-size: 2rem;
+    }
+    
+    .post-description {
+        font-size: 1.1rem;
+    }
+    
+    .post-meta-header {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .post-meta-separator {
+        display: none;
+    }
+}
+</style>

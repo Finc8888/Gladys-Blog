@@ -1,0 +1,107 @@
+{{ define "head" }}
+    <!-- Google Analytics can be added here later -->
+    <link rel="stylesheet" href="{{ "css/custom-posts.css" | absURL }}">
+{{ end }}
+
+{{ define "main" }}
+<div class="post">
+    {{ partial "post-header.html" . }}
+    
+    <div class="post-meta">
+        <h3>📄 Информация о посте</h3>
+        <div class="meta-item">
+            <span class="meta-label">📅 Дата публикации:</span> {{ .Date.Format "2 January 2006" }}
+        </div>
+        {{ if .Params.tldr }}
+        <div class="meta-item">
+            <span class="meta-label">💡 Краткое содержание:</span> {{ .Params.tldr }}
+        </div>
+        {{ end }}
+        {{ if .Params.tags }}
+        <div class="meta-item">
+            <span class="meta-label">🏷️ Теги:</span>
+            <div class="post-tags">
+                {{ range .Params.tags }}
+                    <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="tag">{{ . }}</a>
+                {{ end }}
+            </div>
+        </div>
+        {{ end }}
+        <div class="meta-item">
+            <span class="meta-label">⏱️ Время чтения:</span> {{ .ReadingTime }} мин.
+        </div>
+    </div>
+
+    {{ if .Params.toc }}
+    <div class="toc">
+        <h4>📚 Содержание</h4>
+        {{ .TableOfContents }}
+    </div>
+    {{ end }}
+
+    <div class="post-content">
+        {{ .Content }}
+    </div>
+
+    <!-- Comments section can be added here later -->
+</div>
+
+<script>
+// Smooth scrolling for TOC links
+document.querySelectorAll('.toc a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+// Add copy button to code blocks
+document.querySelectorAll('pre').forEach(pre => {
+    const button = document.createElement('button');
+    button.innerText = '📋 Копировать';
+    button.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    `;
+    
+    pre.style.position = 'relative';
+    pre.appendChild(button);
+    
+    button.addEventListener('click', () => {
+        navigator.clipboard.writeText(pre.querySelector('code').textContent);
+        button.innerText = '✅ Скопировано!';
+        setTimeout(() => button.innerText = '📋 Копировать', 2000);
+    });
+});
+
+// Reading progress indicator
+const progressBar = document.createElement('div');
+progressBar.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(to right, #3498db, #2ecc71);
+    z-index: 9999;
+    transition: width 0.1s ease;
+`;
+document.body.appendChild(progressBar);
+
+window.addEventListener('scroll', () => {
+    const scrolled = (window.pageYOffset / (document.body.scrollHeight - window.innerHeight)) * 100;
+    progressBar.style.width = scrolled + '%';
+});
+</script>
+
+{{ end }}
