@@ -20,8 +20,8 @@ RUN ls -la themes/ || echo "No themes directory"
 
 # Create basic fallback layout if theme is missing
 RUN mkdir -p layouts/_default && \
-    echo '<!DOCTYPE html><html><head><title>{{ .Title }}</title></head><body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>' > layouts/_default/single.html && \
-    echo '<!DOCTYPE html><html><head><title>{{ .Site.Title }}</title></head><body>{{ range .Pages }}<h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>{{ end }}</body></html>' > layouts/_default/list.html
+    echo '<html><head><title>{{ .Title }}</title></head><body><h1>{{ .Title }}</h1>{{ .Content }}</body></html>' > layouts/_default/single.html && \
+    echo '<html><head><title>{{ .Site.Title }}</title></head><body>{{ range .Pages }}<h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>{{ end }}</body></html>' > layouts/_default/list.html
 
 # Build static site with basic options (no git info, no advanced features)
 RUN hugo \

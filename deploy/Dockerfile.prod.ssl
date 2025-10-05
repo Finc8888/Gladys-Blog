@@ -24,104 +24,18 @@ RUN if [ ! -d "themes/archie" ] || [ ! -f "themes/archie/theme.toml" ]; then \
         echo "Theme missing, cloning archie theme..." && \
         rm -rf themes/archie && \
         git clone https://github.com/athul/archie.git themes/archie || \
-        echo "Failed to clone theme, will create fallback layouts"; \
+        echo "Failed to clone theme, continuing without theme"; \
     fi
 
-# Create fallback layouts if theme is still missing or broken
+# Create basic fallback layout if needed
 RUN mkdir -p layouts/_default && \
     if [ ! -f "themes/archie/layouts/index.html" ] && [ ! -f "layouts/index.html" ]; then \
-        echo "Creating fallback index layout..." && \
-        cat > layouts/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="{{ .Site.LanguageCode | default "en" }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Site.Title }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
-        .header { border-bottom: 1px solid #eee; margin-bottom: 30px; padding-bottom: 20px; }
-        .post { margin-bottom: 30px; padding: 20px; border-left: 4px solid #007acc; }
-        .post h2 { margin-top: 0; }
-        .post a { color: #007acc; text-decoration: none; }
-        .post a:hover { text-decoration: underline; }
-        .meta { color: #666; font-size: 0.9em; margin-bottom: 10px; }
-        .nav { margin: 20px 0; }
-        .nav a { margin-right: 20px; color: #007acc; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>{{ .Site.Title }}</h1>
-        <p>{{ .Site.Params.subtitle }}</p>
-        <div class="nav">
-            <a href="/">Главная</a>
-            <a href="/posts">Все посты</a>
-            <a href="/about">О блоге</a>
-            <a href="/tags">Теги</a>
-        </div>
-    </div>
-    <main>
-        {{ $pages := where .Site.RegularPages "Type" "posts" }}
-        {{ range first 10 $pages }}
-        <article class="post">
-            <h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
-            <div class="meta">
-                {{ if .Date }}{{ .Date.Format "2006-01-02" }}{{ end }}
-                {{ if .Params.tags }}| Теги: {{ range .Params.tags }}{{ . }} {{ end }}{{ end }}
-            </div>
-            <p>{{ .Summary }}</p>
-            <a href="{{ .Permalink }}">Читать далее...</a>
-        </article>
-        {{ end }}
-    </main>
-</body>
-</html>
-EOF
+        echo "Creating basic fallback layout..." && \
+        echo '<html><head><title>{{ .Site.Title }}</title></head><body><h1>{{ .Site.Title }}</h1>{{ range .Site.RegularPages }}<h2><a href="{{ .Permalink }}">{{ .Title }}</a></h2>{{ end }}</body></html>' > layouts/index.html; \
     fi && \
     if [ ! -f "themes/archie/layouts/_default/single.html" ] && [ ! -f "layouts/_default/single.html" ]; then \
-        echo "Creating fallback single layout..." && \
-        cat > layouts/_default/single.html << 'EOF'
-<!DOCTYPE html>
-<html lang="{{ .Site.LanguageCode | default "en" }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Title }} - {{ .Site.Title }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
-        .header { border-bottom: 1px solid #eee; margin-bottom: 30px; padding-bottom: 20px; }
-        .nav { margin: 20px 0; }
-        .nav a { margin-right: 20px; color: #007acc; text-decoration: none; }
-        .meta { color: #666; margin-bottom: 20px; }
-        .content { margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1><a href="/" style="text-decoration: none; color: inherit;">{{ .Site.Title }}</a></h1>
-        <div class="nav">
-            <a href="/">Главная</a>
-            <a href="/posts">Все посты</a>
-            <a href="/about">О блоге</a>
-            <a href="/tags">Теги</a>
-        </div>
-    </div>
-    <main>
-        <article>
-            <h1>{{ .Title }}</h1>
-            <div class="meta">
-                {{ if .Date }}Опубликовано: {{ .Date.Format "2006-01-02" }}{{ end }}
-                {{ if .Params.tags }}| Теги: {{ range .Params.tags }}{{ . }} {{ end }}{{ end }}
-            </div>
-            <div class="content">
-                {{ .Content }}
-            </div>
-        </article>
-    </main>
-</body>
-</html>
-EOF
+        echo "Creating basic single layout..." && \
+        echo '<html><head><title>{{ .Title }}</title></head><body><h1>{{ .Title }}</h1><div>{{ .Content }}</div></body></html>' > layouts/_default/single.html; \
     fi
 
 # Validate Hugo configuration and theme
@@ -132,9 +46,7 @@ RUN hugo version && \
     ls -la && \
     echo "=== Theme Check ===" && \
     ls -la themes/ || echo "No themes directory" && \
-    ls -la themes/archie/ || echo "No archie theme" && \
-    echo "=== Layout Check ===" && \
-    find . -name "*.html" -path "*/layouts/*" || echo "No layout files found"
+    ls -la themes/archie/ || echo "No archie theme"
 
 # Build static site with optimizations and debugging
 RUN echo "=== Starting Hugo Build ===" && \
@@ -144,39 +56,19 @@ RUN echo "=== Starting Hugo Build ===" && \
     --baseURL "/" \
     --cleanDestinationDir \
     --gc \
-    --ignoreCache \
-    --verbose \
-    --debug || \
+    --ignoreCache || \
     (echo "=== Hugo Build Failed, trying without minify ===" && \
      hugo \
      --destination /dist \
      --baseURL "/" \
-     --cleanDestinationDir \
-     --verbose)
+     --cleanDestinationDir)
 
 # Verify that the site was built successfully
 RUN echo "=== Build Output Contents ===" && \
     ls -la /dist && \
-    echo "=== Checking for index.html ===" && \
     if [ ! -f /dist/index.html ]; then \
-        echo "WARNING: index.html not found, checking for alternatives..." && \
-        find /dist -name "*.html" -type f && \
-        echo "=== Creating fallback index.html ===" && \
-        cat > /dist/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Gladys Blog</title>
-    <meta http-equiv="refresh" content="0; url=/posts/">
-    <style>body{font-family:sans-serif;text-align:center;padding:50px;}</style>
-</head>
-<body>
-    <h1>Gladys Blog</h1>
-    <p>Redirecting to posts...</p>
-    <p><a href="/posts/">Click here if not redirected</a></p>
-</body>
-</html>
-EOF
+        echo "WARNING: index.html not found, creating minimal fallback..." && \
+        echo '<html><head><title>Blog</title></head><body><h1>Welcome to the Blog</h1><p>Site is ready!</p></body></html>' > /dist/index.html && \
         echo "Fallback index.html created"; \
     else \
         echo "SUCCESS: index.html found!"; \
