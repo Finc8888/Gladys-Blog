@@ -1,34 +1,40 @@
-baseURL = 'https://example.org/'
+baseURL = '/'
 languageCode = 'ru'
 title = 'Gladys-ai blog'
-theme="archie"
+theme = "archie"
 copyright = "© 2025 Gladys-ai blog"
 # Code Highlight
 pygmentsstyle = "monokai"
 pygmentscodefences = true
 pygmentscodefencesguesssyntax = true
 
-disqusShortname = "yourDisqusShortname"
+# disqusShortname = "yourDisqusShortname"
 
-pagination.pagerSize=3 # articles per page
+paginationSize = 10
 
-# Build configuration
-enableGitInfo = false # Disable Git info to prevent errors when .git is not available
-ignoreErrors = ["error-missing-layout"]
-ignoreLogs = ['shortcode-x-getremote', 'shortcode-gist']
+# Build configuration - simplified for Docker
+enableGitInfo = false
+enableRobotsTXT = true
+canonifyURLs = false
+relativeURLs = false
+
+# Error handling
+ignoreErrors = ["error-missing-layout", "error-missing-taxonomy"]
+ignoreLogs = ["shortcode-x-getremote", "shortcode-gist"]
 
 # Build settings
-buildFuture = true
-buildExpired = true
+buildFuture = false
+buildExpired = false
 buildDrafts = false
+removePathAccents = true
 
 [params]
-	mode="auto" # color-mode → light,dark,toggle or auto
-	useCDN=false # don't use CDNs for fonts and icons, instead serve them locally.
-	subtitle = "Персональный блог о математике, программировании и науке"
-	mathjax = true # enable MathJax support
-	katex = true # enable KaTeX support
-	# customCSS = ["css/custom-posts.css"]
+    mode = "auto"
+    useCDN = false
+    subtitle = "Персональный блог о математике, программировании и науке"
+    mathjax = false
+    katex = false
+    customCSS = ["css/custom-posts.css"]
 
 # Social Tags
 
