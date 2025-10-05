@@ -39,7 +39,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    echo "🚀 Starting Hugo blog deployment"
+                    echo "🚀 Starting GladysAI-Blog deployment"
                     echo "Build: ${BUILD_NUMBER}"
                     echo "Environment: ${params.ENVIRONMENT}"
                     echo "Server: ${SERVER_HOST}"
