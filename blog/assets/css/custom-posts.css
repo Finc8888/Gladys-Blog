@@ -6,8 +6,8 @@
 }
 
 body {
-    background-color: #ffffff;
-    color: #333333;
+    background-color: #f8f9fa;
+    color: #2c3e50;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
 }
@@ -22,14 +22,16 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem;
-    background-color: #ffffff;
-    color: #333333;
+    background-color: #fdfdfd;
+    color: #2c3e50;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .post-content {
     line-height: 1.7;
-    color: #333333;
-    background-color: #ffffff;
+    color: #2c3e50;
+    background-color: #fdfdfd;
 }
 
 /* Typography - Light theme only */
@@ -74,7 +76,7 @@ body {
 /* Paragraphs */
 .post-content p {
     margin-bottom: 1.5rem;
-    color: #333333;
+    color: #2c3e50;
     text-align: left;
 }
 
@@ -96,7 +98,7 @@ body {
 .post-content ol {
     margin: 1.5rem 0;
     padding-left: 2rem;
-    color: #333333;
+    color: #2c3e50;
 }
 
 .post-content li {
@@ -113,29 +115,29 @@ body {
 
 /* Code blocks */
 .post-content code {
-    background-color: #f5f5f5;
-    color: #d73a49;
+    background-color: #f1f3f4;
+    color: #c7254e;
     padding: 2px 6px;
     border-radius: 3px;
     font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
     font-size: 0.9em;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #d1d5da;
 }
 
 .post-content pre {
-    background-color: #f6f8fa;
-    color: #24292e;
+    background-color: #f3f4f6;
+    color: #1f2937;
     padding: 1.5rem;
     border-radius: 8px;
     overflow-x: auto;
     margin: 1.5rem 0;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #d1d5da;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .post-content pre code {
     background-color: transparent;
-    color: #24292e;
+    color: #1f2937;
     padding: 0;
     font-size: 0.95em;
     border: none;
@@ -146,50 +148,50 @@ body {
     width: 100%;
     border-collapse: collapse;
     margin: 2rem 0;
-    background-color: #ffffff;
+    background-color: #fdfdfd;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #d1d5da;
 }
 
 .post-content table th {
-    background-color: #f6f8fa;
-    color: #24292e;
+    background-color: #f1f3f4;
+    color: #1f2937;
     padding: 1rem;
     text-align: left;
     font-weight: 600;
-    border-bottom: 2px solid #e1e4e8;
+    border-bottom: 2px solid #d1d5da;
 }
 
 .post-content table td {
     padding: 1rem;
-    border-bottom: 1px solid #e1e4e8;
-    color: #333333;
+    border-bottom: 1px solid #d1d5da;
+    color: #2c3e50;
 }
 
 .post-content table tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #f6f8fa;
 }
 
 .post-content table tr:hover {
-    background-color: #f1f8ff;
+    background-color: #e6f3ff;
 }
 
 /* Blockquotes */
 .post-content blockquote {
     border-left: 4px solid #007acc;
-    background-color: #f8f9fa;
+    background-color: #f3f4f6;
     padding: 1rem 1.5rem;
     margin: 2rem 0;
     font-style: italic;
-    color: #555555;
+    color: #4b5563;
     border-radius: 0 4px 4px 0;
 }
 
 .post-content blockquote p {
     margin-bottom: 0.5rem;
-    color: #555555;
+    color: #4b5563;
 }
 
 .post-content blockquote p:last-child {
@@ -210,12 +212,12 @@ body {
 
 /* Post metadata */
 .post-meta {
-    background-color: #f8f9fa;
+    background-color: #f3f4f6;
     padding: 1.5rem;
     border-radius: 8px;
     margin-bottom: 2rem;
     border-left: 4px solid #007acc;
-    border: 1px solid #e1e4e8;
+    border: 1px solid #d1d5da;
 }
 
 .post-meta h3 {
@@ -225,7 +227,7 @@ body {
 
 .post-meta .meta-item {
     margin: 0.5rem 0;
-    color: #555555;
+    color: #4b5563;
 }
 
 .post-meta .meta-label {
@@ -255,58 +257,7 @@ body {
     color: #ffffff;
 }
 
-/* Improved Table of Contents - Non-intrusive layout */
-.toc {
-    background-color: #f8f9fa;
-    border: 1px solid #e1e4e8;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin: 2rem 0;
-    width: 100%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.toc h4 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #2c3e50;
-    font-size: 1.1rem;
-    text-align: center;
-    border-bottom: 2px solid #007acc;
-    padding-bottom: 0.5rem;
-}
-
-.toc ul {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.toc ul ul {
-    padding-left: 1.5rem;
-    margin-top: 0.5rem;
-}
-
-.toc li {
-    margin-bottom: 0.5rem;
-}
-
-.toc a {
-    color: #555555;
-    text-decoration: none;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    padding: 0.2rem 0;
-    display: block;
-    border-radius: 3px;
-    transition: all 0.2s ease;
-}
-
-.toc a:hover {
-    color: #007acc;
-    background-color: #e3f2fd;
-    padding-left: 0.5rem;
-}
+/* TOC styles removed - TOC no longer displayed */
 
 /* Strong and emphasis */
 .post-content strong {
@@ -435,63 +386,60 @@ body {
     .post-content h6,
     .post-content p,
     .post-content li {
-        background-color: #ffffff !important;
-        color: #333333 !important;
+        background-color: #fdfdfd !important;
+        color: #2c3e50 !important;
     }
 
     .post-content code {
-        background-color: #f5f5f5 !important;
-        color: #d73a49 !important;
-        border: 1px solid #e1e4e8 !important;
+        background-color: #f1f3f4 !important;
+        color: #c7254e !important;
+        border: 1px solid #d1d5da !important;
     }
 
     .post-content pre {
-        background-color: #f6f8fa !important;
-        color: #24292e !important;
-        border: 1px solid #e1e4e8 !important;
+        background-color: #f3f4f6 !important;
+        color: #1f2937 !important;
+        border: 1px solid #d1d5da !important;
     }
 
     .post-content pre code {
         background-color: transparent !important;
-        color: #24292e !important;
+        color: #1f2937 !important;
     }
 
     .post-content table th {
-        background-color: #f6f8fa !important;
-        color: #24292e !important;
+        background-color: #f1f3f4 !important;
+        color: #1f2937 !important;
     }
 
     .post-content table td {
-        color: #333333 !important;
+        color: #2c3e50 !important;
     }
 
     .post-content table tr:nth-child(even) {
-        background-color: #f9f9f9 !important;
+        background-color: #f6f8fa !important;
     }
 
     .post-content table tr:hover {
-        background-color: #f1f8ff !important;
+        background-color: #e6f3ff !important;
     }
 
     .post-content blockquote {
-        background-color: #f8f9fa !important;
-        color: #555555 !important;
+        background-color: #f3f4f6 !important;
+        color: #4b5563 !important;
     }
 
-    .post-meta,
-    .toc {
-        background-color: #f8f9fa !important;
-        color: #333333 !important;
-        border-color: #e1e4e8 !important;
+    .post-meta {
+        background-color: #f3f4f6 !important;
+        color: #2c3e50 !important;
+        border-color: #d1d5da !important;
     }
 
-    .post-meta .meta-item,
-    .toc a {
-        color: #555555 !important;
+    .post-meta .meta-item {
+        color: #4b5563 !important;
     }
 
-    .post-meta h3,
-    .toc h4 {
+    .post-meta h3 {
         color: #2c3e50 !important;
     }
 }

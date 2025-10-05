@@ -32,12 +32,7 @@
         </div>
     </div>
 
-    {{ if .Params.toc }}
-    <div class="toc">
-        <h4>📚 Содержание</h4>
-        {{ .TableOfContents }}
-    </div>
-    {{ end }}
+
 
     <div class="post-content">
         {{ .Content }}
@@ -47,15 +42,7 @@
 </div>
 
 <script>
-// Smooth scrolling for TOC links
-document.querySelectorAll('.toc a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.querySelector(this.getAttribute('href')).scrollIntoView({
-            behavior: 'smooth'
-        });
-    });
-});
+
 
 // Add copy button to code blocks
 document.querySelectorAll('pre').forEach(pre => {
