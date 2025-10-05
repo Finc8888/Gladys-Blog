@@ -1,5 +1,7 @@
+version: '3.8'
+
 services:
-  # Development service with hot reload (HTTP only for development)
+  # Development service with hot reload (compatible with older Docker Compose)
   blog-dev:
     build:
       context: .
@@ -19,7 +21,6 @@ services:
       retries: 3
       start_period: 40s
 
-
   # Production service with SSL support
   blog-prod-ssl:
     build:
@@ -33,9 +34,6 @@ services:
       # SSL certificates volume
       - ssl-certs:/etc/letsencrypt
       - certbot-webroot:/var/www/certbot
-      # Optional: bind mount for persistent certificates
-      # - ./ssl/letsencrypt:/etc/letsencrypt
-      # - ./ssl/certbot:/var/www/certbot
     environment:
       # Replace with your actual domain
       - DOMAIN=${DOMAIN:-localhost}
@@ -62,14 +60,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
 
   # Standalone Certbot service for certificate management
   certbot:
@@ -83,14 +73,12 @@ services:
       - EMAIL=${EMAIL:-admin@localhost}
     command: >
       sh -c "
-        if [ '${DOMAIN:-localhost}' != 'localhost' ]; then
-          certbot certonly --webroot -w /var/www/certbot -d ${DOMAIN} --email ${EMAIL} --agree-tos --non-interactive ${STAGING:+--staging} || exit 0
+        if [ '$${DOMAIN:-localhost}' != 'localhost' ]; then
+          certbot certonly --webroot -w /var/www/certbot -d $${DOMAIN} --email $${EMAIL} --agree-tos --non-interactive $${STAGING:+--staging} || exit 0
         else
           echo 'Skipping certbot for localhost'
         fi
       "
-    profiles:
-      - manual-cert
     depends_on:
       - blog-prod-ssl
 
@@ -107,32 +95,11 @@ services:
       sh -c "
         while :; do
           sleep 12h
-          if [ '${DOMAIN:-localhost}' != 'localhost' ]; then
+          if [ '$${DOMAIN:-localhost}' != 'localhost' ]; then
             certbot renew --webroot -w /var/www/certbot
           fi
         done
       "
-    profiles:
-      - auto-renew
-    depends_on:
-      - blog-prod-ssl
-
-  # Nginx proxy for advanced SSL termination (optional)
-  nginx-proxy:
-    image: nginx:alpine
-    container_name: gladys-blog-nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./deploy/nginx-proxy.conf:/etc/nginx/nginx.conf:ro
-      - ssl-certs:/etc/letsencrypt:ro
-      - certbot-webroot:/var/www/certbot:ro
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
-    restart: unless-stopped
-    profiles:
-      - proxy
     depends_on:
       - blog-prod-ssl
 
@@ -146,15 +113,13 @@ services:
       sh -c "
         apk add --no-cache openssl curl
         while :; do
-          if [ -f '/etc/letsencrypt/live/${DOMAIN:-localhost}/fullchain.pem' ]; then
-            days_until_expiry=$$(openssl x509 -in '/etc/letsencrypt/live/${DOMAIN:-localhost}/fullchain.pem' -noout -checkend 2592000 && echo '30+' || echo 'less than 30')
+          if [ -f '/etc/letsencrypt/live/$${DOMAIN:-localhost}/fullchain.pem' ]; then
+            days_until_expiry=$$(openssl x509 -in '/etc/letsencrypt/live/$${DOMAIN:-localhost}/fullchain.pem' -noout -checkend 2592000 && echo '30+' || echo 'less than 30')
             echo \"SSL Certificate expires in: \$$days_until_expiry days\"
           fi
           sleep 24h
         done
       "
-    profiles:
-      - monitoring
     restart: unless-stopped
 
 volumes:
@@ -170,13 +135,11 @@ networks:
     name: gladys-blog-ssl-network
     driver: bridge
 
-# Docker Compose profiles usage:
-# Default: docker-compose -f docker-compose.ssl.yaml up blog-prod-ssl
-# With manual cert: docker-compose -f docker-compose.ssl.yaml --profile manual-cert up
-# With auto-renew: docker-compose -f docker-compose.ssl.yaml --profile auto-renew up -d
-# With proxy: docker-compose -f docker-compose.ssl.yaml --profile proxy up
-# With monitoring: docker-compose -f docker-compose.ssl.yaml --profile monitoring up -d
-# Development: docker-compose -f docker-compose.ssl.yaml up blog-dev
+# Legacy Docker Compose usage:
+# Basic SSL deployment: docker-compose -f docker-compose.ssl.legacy.yaml up -d blog-prod-ssl
+# With certificate renewal: docker-compose -f docker-compose.ssl.legacy.yaml up -d blog-prod-ssl certbot-renew
+# With monitoring: docker-compose -f docker-compose.ssl.legacy.yaml up -d blog-prod-ssl ssl-monitor
+# Development: docker-compose -f docker-compose.ssl.legacy.yaml up blog-dev
 
 # Environment variables can be set in .env file:
 # DOMAIN=yourdomain.com

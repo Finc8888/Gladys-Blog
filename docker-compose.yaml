@@ -18,13 +18,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    develop:
-      watch:
-        - action: sync
-          path: ./blog
-          target: /blog
-        - action: rebuild
-          path: ./deploy/Dockerfile
+
 
   # Production service with optimized build
   blog-prod:

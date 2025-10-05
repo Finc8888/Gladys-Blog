@@ -17,7 +17,8 @@ NC='\033[0m' # No Color
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.ssl.yaml"
+# Will be set dynamically based on Docker Compose version
+COMPOSE_FILE=""
 ENV_FILE="$PROJECT_ROOT/.env"
 ENV_EXAMPLE="$PROJECT_ROOT/.env.ssl.example"
 
@@ -97,18 +98,35 @@ show_usage() {
 # Function to check prerequisites
 check_prerequisites() {
     log "Checking prerequisites..."
-
+    
     # Check if docker is installed
     if ! command -v docker &> /dev/null; then
         error "Docker is not installed. Please install Docker first."
         exit 1
     fi
-
+    
     # Check if docker-compose is installed
     if ! command -v docker-compose &> /dev/null; then
         error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
+    
+    # Check Docker Compose version compatibility
+    local compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    local major_version=$(echo $compose_version | cut -d. -f1)
+    local minor_version=$(echo $compose_version | cut -d. -f2)
+    
+    if [ "$major_version" -lt 2 ]; then
+        warn "Docker Compose version $compose_version detected. Some features may not work."
+        warn "For full compatibility, please upgrade to Docker Compose 2.0+"
+        warn "Install command: sudo curl -L \"https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose"
+        info "Continuing with compatibility mode..."
+    else
+        info "Docker Compose version $compose_version - Compatible"
+    fi
+    
+    # Set the appropriate compose file
+    set_compose_file
 
     # Check if we're in the right directory
     if [ ! -f "$COMPOSE_FILE" ]; then
@@ -123,6 +141,30 @@ check_prerequisites() {
     fi
 
     success "All prerequisites met"
+}
+
+# Function to determine which docker-compose file to use
+set_compose_file() {
+    if [ -n "$COMPOSE_FILE" ]; then
+        return 0  # Already set
+    fi
+    
+    local compose_version=$(docker-compose --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    local major_version=$(echo $compose_version | cut -d. -f1)
+    
+    if [ "$major_version" -lt 2 ]; then
+        COMPOSE_FILE="$PROJECT_ROOT/docker-compose.ssl.legacy.yaml"
+        info "Using legacy Docker Compose file for version $compose_version"
+    else
+        COMPOSE_FILE="$PROJECT_ROOT/docker-compose.ssl.yaml"
+        info "Using modern Docker Compose file for version $compose_version"
+    fi
+    
+    # Verify the compose file exists
+    if [ ! -f "$COMPOSE_FILE" ]; then
+        error "Docker Compose file not found: $COMPOSE_FILE"
+        exit 1
+    fi
 }
 
 # Function to create .env file
@@ -186,6 +228,9 @@ interactive_setup() {
 
     # Summary
     echo ""
+    # Determine which compose file to use
+    set_compose_file
+    
     highlight "=== Configuration Summary ==="
     echo "Domain: $DOMAIN"
     echo "Email: $EMAIL"
@@ -259,8 +304,19 @@ start_production() {
     # Load environment
     source "$ENV_FILE"
 
-    # Start with auto-renewal
-    docker-compose -f "$COMPOSE_FILE" --profile auto-renew up --build -d
+    # Check Docker Compose version and use appropriate method
+    local compose_version=$(docker-compose --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    local major_version=$(echo $compose_version | cut -d. -f1)
+    
+    if [ "$major_version" -lt 2 ]; then
+        # Legacy version - start services individually
+        log "Starting production services (legacy mode)"
+        docker-compose -f "$COMPOSE_FILE" up --build -d blog-prod-ssl
+        docker-compose -f "$COMPOSE_FILE" up -d certbot-renew
+    else
+        # Modern version with profiles
+        docker-compose -f "$COMPOSE_FILE" --profile auto-renew up --build -d
+    fi
 
     success "Production services started with SSL and auto-renewal"
     info "Services will automatically renew certificates"
@@ -381,7 +437,11 @@ renew_certificates() {
     fi
 
     # Run certbot renewal
-    docker-compose -f "$COMPOSE_FILE" run --rm certbot certbot renew
+    if docker-compose -f "$COMPOSE_FILE" ps | grep -q certbot; then
+        docker-compose -f "$COMPOSE_FILE" exec certbot certbot renew
+    else
+        docker-compose -f "$COMPOSE_FILE" run --rm certbot certbot renew
+    fi
 
     # Restart nginx to reload certificates
     docker-compose -f "$COMPOSE_FILE" restart blog-prod-ssl
@@ -447,11 +507,11 @@ cleanup() {
         return 0
     fi
 
-    # Stop and remove containers
-    docker-compose -f "$COMPOSE_FILE" --profile "*" down -v --remove-orphans
-
+    # Stop and remove containers (compatible with all versions)
+    docker-compose -f "$COMPOSE_FILE" down -v --remove-orphans
+    
     # Remove images
-    docker-compose -f "$COMPOSE_FILE" --profile "*" down --rmi all
+    docker-compose -f "$COMPOSE_FILE" down --rmi all
 
     success "Cleanup completed"
 }
