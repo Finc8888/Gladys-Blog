@@ -34,7 +34,7 @@ removePathAccents = true
     subtitle = "Персональный блог о математике, программировании и науке"
     mathjax = false
     katex = false
-    customCSS = ["css/custom-posts.css"]
+
 
 # Social Tags
 
