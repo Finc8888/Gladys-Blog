@@ -1,0 +1,200 @@
+<script type="application/javascript" src="{{ "js/github-style.js" | absURL }}"></script>
+{{ if or .Params.math .Site.Params.math }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"
+  integrity="sha384-wcIxkf4k558AjM3Yz3BBFQUbk/zgIYC2R0QpeeYb+TwlBVMrlgLqwRjRtGZiK7ww" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"
+  integrity="sha384-hIoBPJpTUs74ddyc4bFZSM1TVlQDA60VBbJS0oA934VSz82sBx1X7kSx2ATBDIyd" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js"
+  integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"
+  onload="renderMathInElement(document.body);"></script>
+{{ end }}
+
+{{ if or .Params.MathJax .Site.Params.MathJax }}
+<script type="text/javascript" async
+  src="https://cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\[\[', '\]\]']],
+        processEscapes: true,
+        processEnvironments: true,
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+        TeX: {
+          equationNumbers: { autoNumber: "AMS" },
+          extensions: ["AMSmath.js", "AMSsymbols.js"]
+        }
+      }
+    });
+
+    MathJax.Hub.Queue(function () {
+      // Fix <code> tags after MathJax finishes running. This is a
+      // hack to overcome a shortcoming of Markdown. Discussion at
+      // https://github.com/mojombo/jekyll/issues/199
+      var all = MathJax.Hub.getAllJax(), i;
+      for (i = 0; i < all.length; i += 1) {
+        all[i].SourceElement().parentNode.className += ' has-jax';
+      }
+    });
+  </script>
+
+<style>
+  code.has-jax {
+    font: inherit;
+    font-size: 100%;
+    background: inherit;
+    border: inherit;
+    color: #515151;
+  }
+</style>
+{{ end }}
+
+{{ if .Site.Params.enableSearch }}
+<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script type="application/javascript" src='{{ "js/search.js" | absURL }}'></script>
+{{ end }}
+
+<style>
+.js-cookie-consent-bar {
+  display: none;
+}
+.cookie-consent-bar {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #cacbca;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.35);
+  color: #323739;
+  font-family: $font-h;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 298px;
+  height: 60px;
+  margin-left: calc((100% - 298px) / 2);
+  z-index: 100;
+  padding: 10px 10px 10px 12px;
+  box-sizing: border-box;
+}
+.cookie-consent-bar__text {
+  display: inline-block;
+  height: 36px;
+  width: 209px;
+  margin-top: 1px;
+  float: left;
+}
+.cookie-consent-bar__button,
+.cookie-consent-bar__link {
+  color: #323739;
+  @include keyboard-outline-a;
+}
+.cookie-consent-bar__link {
+  white-space: nowrap;
+  &:hover {
+    text-decoration: none;
+  }
+}
+.cookie-consent-bar__button {
+  background-color: rgba(255, 255, 255, 0);
+  font-family: $font-h;
+  box-sizing: border-box;
+  width: 56px;
+  border: 1px solid #939593;
+  border-radius: 4px;
+  color: #323739;
+  font-size: 12px;
+  font-weight: bold;
+  height: 38px;
+  cursor: pointer;
+  margin: 0 0 0 3px;
+  padding: 0;
+}
+</style>
+
+<script type="application/javascript">
+  // Array of callbacks to be executed when consent changes
+  const consentListeners = [];
+
+  /**
+  *   Called from GTM template to set callback to be executed when user consent is provided.
+  *   @param {function} Callback to execute on user consent
+  */
+  window.addConsentListenerExample = (callback) => {
+      consentListeners.push(callback);
+  };
+
+  const getCookie = () => {
+      const cookies = new Map();
+      const list = document.cookie.split('; ');
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const cookie of list) {
+          if (cookie.includes('=')) {
+              const p = cookie.indexOf('=');
+              const name = cookie.substring(0, p);
+              let value = cookie.substring(p + 1);
+              value = decodeURIComponent(value);
+              cookies.set(name, value);
+          } else {
+              console.warn('It is not cookie group.');
+          }
+      }
+      return cookies;
+  };
+
+  /**
+  *   Called when user grants/denies consent.
+  *   @param {Object} Object containing user consent settings.
+  */
+  const onConsentChange = (consent) => {
+      consentListeners.forEach((callback) => {
+          console.log('into GTM consent Listener');
+          callback(consent);
+      });
+  };
+  var consentBtn = document.querySelector(".js-cookie-consent-bar__button");
+  var consentBar = document.querySelector(".js-cookie-consent-bar");
+  const event = new Event("consentGranted");
+  const cookie = getCookie();
+  console.log(cookie);
+  if(Number(cookie.get('cookieConsent')) !== 1) {
+      console.log(Number(cookie.get('cookieConsent')));
+      consentBar.style.display = 'block';
+      console.log('if');
+  } else {
+      console.log('else');
+  }
+  consentBtn.addEventListener('click', function () {
+      consentBar.style.display = 'none';
+      var expDate = new Date, base = new Date(0);
+      var skew = base.getTime();
+      if (skew > 0) {  // Correction for Mac 2.x date bug
+          expDate.setTime(expDate.getTime() - skew);
+      }
+      expDate.setTime(expDate.getTime() + 63072000000);  // 24 months from now
+      document.cookie = 'cookieConsent=1; expires=' + expDate.toGMTString();
+      window.dispatchEvent(event);
+  });
+</script>
+<script type="application/javascript">
+  console.log('from clarity');
+
+  document.addEventListener('DOMContentLoaded', () => {
+      const clarityTracking = document.querySelector('.js-clarity-tracking');
+      console.log('elem', clarityTracking);
+      setTimeout(() => {
+          console.log('window.clarity', window.clarity);
+          if (window.clarity && clarityTracking) {
+              window.addEventListener('consentGranted', () => {
+                  console.log('consent granted');
+                  window.clarity('consent');
+              });
+              const { key } = clarityTracking.dataset;
+              const { value } = clarityTracking.dataset;
+              console.log('key', key);
+              console.log('value', value);
+              window.clarity('set', key, value);
+          }
+      }, 1000);
+  });
+</script>
