@@ -1,3 +1,6 @@
 [submodule "blog/themes/archie"]
 	path = blog/themes/archie
 	url = https://github.com/athul/archie.git
+[submodule "blog/gladys/themes/github-style"]
+	path = blog/gladys/themes/github-style
+	url = git@github.com:MeiK2333/github-style.git

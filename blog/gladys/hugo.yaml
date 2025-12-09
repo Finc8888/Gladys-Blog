@@ -1,0 +1,17 @@
+baseURL: https://cloud.gladys-ai.ru/
+languageCode: en-us
+title: My New Hugo Site
+theme: "github-style"
+params:
+  headerIcon: "https://cloud.gladys-ai.ru/images/logo.png"
+  # Google Tag Manager
+  gtm_id: "GTM-PLTL8QS6"
+  # Microsoft Clarity
+  clarity_id: "nigbe3ubnx"
+
+# baseURL: http://cloud.gladys-ai.ru/
+# languageCode: en-us
+# title: My New Hugo Site
+# theme: "github-style"
+# params:
+#   headerIcon: "http://cloud.gladys-ai.ru/images/logo.png"
