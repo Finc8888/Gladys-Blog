@@ -1,4 +1,313 @@
 {{ if site.Params.gtm_id }}
+  <script>
+  /**
+   * Internal Traffic Tracking System (dataLayer-based)
+   * Tracks internal traffic using isrc (static) and intcmp (campaign) parameters
+   * Version: 2.0.0 - dataLayer implementation
+   */
+
+  (function() {
+    'use strict';
+
+    // Configuration
+    const CONFIG = {
+      params: {
+        static: 'isrc',      // For permanent/static internal links
+        campaign: 'intcmp'   // For campaign/promotional internal links
+      },
+      cookies: {
+        staticName: '_isrc',
+        campaignName: '_intcmp',
+        expireDays: 30,      // Cookie expiration in days
+        domain: null,        // Auto-detect or set manually (e.g., '.example.com')
+        path: '/'
+      },
+      dataLayer: {
+        enabled: true,
+        eventName: 'internal_tracking_update',
+        variables: {
+          static: 'internal_source_static',
+          campaign: 'internal_campaign_promo'
+        }
+      },
+      debug: false          // Set to true for console logging
+    };
+
+    /**
+     * Initialize dataLayer if it doesn't exist
+     */
+    function initDataLayer() {
+      window.dataLayer = window.dataLayer || [];
+    }
+
+    /**
+     * Utility: Get URL parameter value
+     */
+    function getUrlParameter(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    /**
+     * Utility: Set cookie
+     */
+    function setCookie(name, value, days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      const expires = `expires=${date.toUTCString()}`;
+      const domain = CONFIG.cookies.domain ? `domain=${CONFIG.cookies.domain};` : '';
+      document.cookie = `${name}=${value};${expires};${domain}path=${CONFIG.cookies.path};SameSite=Lax`;
+
+      if (CONFIG.debug) {
+        console.log(`[Internal Tracking] Cookie set: ${name}=${value}`);
+      }
+    }
+
+    /**
+     * Utility: Get cookie value
+     */
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+      }
+      return null;
+    }
+
+    /**
+     * Push data to dataLayer
+     */
+    function pushToDataLayer(data) {
+      if (!CONFIG.dataLayer.enabled) {
+        return;
+      }
+
+      initDataLayer();
+
+      const payload = {
+        event: CONFIG.dataLayer.eventName,
+        [CONFIG.dataLayer.variables.static]: data.static || undefined,
+        [CONFIG.dataLayer.variables.campaign]: data.campaign || undefined
+      };
+
+      window.dataLayer.push(payload);
+
+      if (CONFIG.debug) {
+        console.log('[Internal Tracking] dataLayer.push:', payload);
+      }
+    }
+
+    /**
+     * Main: Capture and persist internal tracking parameters
+     */
+    function captureInternalParams() {
+      let hasNewData = false;
+      const data = {
+        static: null,
+        campaign: null
+      };
+
+      // Check for isrc parameter
+      const isrcValue = getUrlParameter(CONFIG.params.static);
+      if (isrcValue) {
+        setCookie(CONFIG.cookies.staticName, isrcValue, CONFIG.cookies.expireDays);
+        data.static = isrcValue;
+        hasNewData = true;
+
+        if (CONFIG.debug) {
+          console.log(`[Internal Tracking] Static source captured: ${isrcValue}`);
+        }
+      } else {
+        data.static = getCookie(CONFIG.cookies.staticName);
+      }
+
+      // Check for intcmp parameter
+      const intcmpValue = getUrlParameter(CONFIG.params.campaign);
+      if (intcmpValue) {
+        setCookie(CONFIG.cookies.campaignName, intcmpValue, CONFIG.cookies.expireDays);
+        data.campaign = intcmpValue;
+        hasNewData = true;
+
+        if (CONFIG.debug) {
+          console.log(`[Internal Tracking] Campaign source captured: ${intcmpValue}`);
+        }
+      } else {
+        data.campaign = getCookie(CONFIG.cookies.campaignName);
+      }
+
+      // Push to dataLayer on every page load
+      // This ensures GTM always has access to current values
+      if (data.static || data.campaign) {
+        pushToDataLayer(data);
+      }
+    }
+
+    /**
+     * Get current internal tracking values (from cookies)
+     */
+    function getInternalTrackingData() {
+      return {
+        static: getCookie(CONFIG.cookies.staticName),
+        campaign: getCookie(CONFIG.cookies.campaignName)
+      };
+    }
+
+    /**
+     * Add tracking parameters to internal links
+     * This is a helper function for dynamically generated content
+     */
+    function addTrackingToLink(url, paramType, paramValue) {
+      try {
+        const urlObj = new URL(url, window.location.origin);
+
+        // Only add to internal links (same origin)
+        if (urlObj.origin !== window.location.origin) {
+          if (CONFIG.debug) {
+            console.warn(`[Internal Tracking] Skipping external URL: ${url}`);
+          }
+          return url;
+        }
+
+        const paramName = paramType === 'static' ? CONFIG.params.static : CONFIG.params.campaign;
+        urlObj.searchParams.set(paramName, paramValue);
+
+        return urlObj.toString();
+      } catch (e) {
+        console.error('[Internal Tracking] Error adding tracking parameter:', e);
+        return url;
+      }
+    }
+
+    /**
+     * Initialize click tracking for dynamically added links
+     */
+    function initClickTracking() {
+      document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[data-isrc], a[data-intcmp]');
+        if (!link) return;
+
+        const isrc = link.getAttribute('data-isrc');
+        const intcmp = link.getAttribute('data-intcmp');
+
+        try {
+          const url = new URL(link.href);
+
+          // Only modify internal links
+          if (url.origin !== window.location.origin) {
+            return;
+          }
+
+          if (isrc) {
+            url.searchParams.set(CONFIG.params.static, isrc);
+          }
+
+          if (intcmp) {
+            url.searchParams.set(CONFIG.params.campaign, intcmp);
+          }
+
+          link.href = url.toString();
+
+          if (CONFIG.debug) {
+            console.log('[Internal Tracking] Link updated:', link.href);
+          }
+        } catch (err) {
+          console.error('[Internal Tracking] Error processing link:', err);
+        }
+      }, true);
+    }
+
+    /**
+     * Public API
+     */
+    window.InternalTracking = {
+      /**
+       * Get current tracking data
+       */
+      getData: getInternalTrackingData,
+
+      /**
+       * Add tracking parameter to URL
+       * @param {string} url - The URL to modify
+       * @param {string} type - 'static' or 'campaign'
+       * @param {string} value - The tracking value
+       * @returns {string} Modified URL
+       */
+      addTracking: addTrackingToLink,
+
+      /**
+       * Manually set tracking values and push to dataLayer
+       * @param {string} type - 'static' or 'campaign'
+       * @param {string} value - The tracking value
+       */
+      set: function(type, value) {
+        const data = getInternalTrackingData();
+
+        if (type === 'static') {
+          setCookie(CONFIG.cookies.staticName, value, CONFIG.cookies.expireDays);
+          data.static = value;
+        } else if (type === 'campaign') {
+          setCookie(CONFIG.cookies.campaignName, value, CONFIG.cookies.expireDays);
+          data.campaign = value;
+        }
+
+        pushToDataLayer(data);
+      },
+
+      /**
+       * Push current data to dataLayer manually
+       */
+      pushToDataLayer: function() {
+        const data = getInternalTrackingData();
+        pushToDataLayer(data);
+      },
+
+      /**
+       * Clear tracking data
+       */
+      clear: function() {
+        setCookie(CONFIG.cookies.staticName, '', -1);
+        setCookie(CONFIG.cookies.campaignName, '', -1);
+
+        // Push cleared state to dataLayer
+        pushToDataLayer({
+          static: undefined,
+          campaign: undefined
+        });
+      }
+    };
+
+    /**
+     * Initialize on page load
+     */
+    function init() {
+      // Initialize dataLayer
+      initDataLayer();
+
+      // Capture parameters from URL and push to dataLayer
+      captureInternalParams();
+
+      // Initialize click tracking for data attributes
+      initClickTracking();
+
+      if (CONFIG.debug) {
+        console.log('[Internal Tracking] Initialized');
+        console.log('[Internal Tracking] Current data:', getInternalTrackingData());
+        console.log('[Internal Tracking] dataLayer:', window.dataLayer);
+      }
+    }
+
+    // Run initialization
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+  })();
+  </script>
   <!-- Google Tag Manager -->
   <script>
   (function (w, d, s, l, i) {
